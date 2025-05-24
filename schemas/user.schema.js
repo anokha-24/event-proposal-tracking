@@ -1,27 +1,41 @@
 import { z } from 'zod';
 
 // Base user schema
-export const UserSchema = z.object({
-    uid: z.string().min(1, 'UID is required'),
-    name: z.string().min(1, 'Name is required').max(100, 'Name too long'),
-    email: z
-        .string()
-        .email('Invalid email format')
-        .regex(/^[a-zA-Z0-9._%+-]+@cb\.students\.amrita\.edu$/, {
-            message: 'Email must end with @cb.students.amrita.edu',
+export const UserSchema = z
+    .object({
+        uid: z.string().min(1, 'UID is required'),
+        name: z.string().min(1, 'Name is required').max(100, 'Name too long'),
+        email: z
+            .string()
+            .email('Invalid email format')
+            .regex(/^[a-zA-Z0-9._%+-]+@cb\.students\.amrita\.edu$/, {
+                message: 'Email must end with @cb.students.amrita.edu',
+            }),
+        role: z.enum(['Admin', 'Reviewer', 'Proposer'], {
+            errorMap: () => ({ message: 'Role must be Admin, Reviewer, or Proposer' }),
         }),
-    role: z.enum(['Admin', 'Reviewer', 'Proposer'], {
-        errorMap: () => ({ message: 'Role must be Admin, Reviewer, or Proposer' }),
-    }),
-    department: z
-        .union([
-            z.string().min(1, 'Department cannot be empty'),
-            z.array(z.string().min(1, 'Department cannot be empty')),
-            z.null(),
-        ])
-        .optional(),
-    createdAt: z.any().optional(), // serverTimestamp
-});
+        department: z
+            .union([
+                z.string().min(1, 'Department cannot be empty'),
+                z.array(z.string().min(1, 'Department cannot be empty')),
+                z.null(),
+            ])
+            .optional(),
+        level: z.number().int().positive('Level must be a positive integer').optional(),
+        createdAt: z.any().optional(), // serverTimestamp
+    })
+    .refine(
+        (data) => {
+            if (data.role === 'Reviewer') {
+                return typeof data.level === 'number';
+            }
+            return data.level === undefined;
+        },
+        {
+            message: 'Only reviewers must have a numeric level',
+            path: ['level'],
+        }
+    );
 
 // Schema for POST /api/user/[id] (create user)
 export const CreateUserSchema = UserSchema;
@@ -49,10 +63,24 @@ export const UpdateUserSchema = z
                 z.null(),
             ])
             .optional(),
+        level: z.number().int().positive('Level must be a positive integer').optional(),
     })
-    .refine((data) => Object.keys(data).length > 0, {
-        message: 'At least one field must be provided for update',
-    });
+    .refine(
+        (data) => Object.keys(data).length > 0,
+        {
+            message: 'At least one field must be provided for update',
+        },
+        (data) => {
+            if (data.role === 'Reviewer') {
+                return typeof data.level === 'number';
+            }
+            return data.level === undefined;
+        },
+        {
+            message: 'Only reviewers must have a numeric level',
+            path: ['level'],
+        }
+    );
 
 // Schema for GET /api/user/role (query params)
 export const RoleQuerySchema = z.object({

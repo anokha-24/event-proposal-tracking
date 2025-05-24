@@ -56,6 +56,10 @@ export async function PUT(request, { params }) {
         const body = await request.json();
         const validatedUpdates = UpdateUserSchema.parse(body);
 
+        if (validatedUpdates.role !== 'Reviewer') {
+            delete validatedUpdates.level;
+        }
+
         const userRef = doc(db, 'Auth', validatedParams.id);
         await updateDoc(userRef, validatedUpdates);
 
@@ -94,6 +98,7 @@ export async function POST(req) {
 
         if (department !== null) {
             if (role === 'Reviewer') {
+                userData.level = validatedData.level;
                 userData.department = Array.isArray(department)
                     ? department
                     : [department].filter(Boolean);
