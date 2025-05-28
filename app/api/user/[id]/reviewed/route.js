@@ -4,9 +4,12 @@ import { db } from '@/lib/firebase/firebase';
 
 export async function GET(_, { params }) {
     try {
-        const userId = await (params).id;
+        const userId = await params.id;
         if (!userId) {
-            return NextResponse.json({ success: false, message: 'User ID required' }, { status: 400 });
+            return NextResponse.json(
+                { success: false, message: 'User ID required' },
+                { status: 400 }
+            );
         }
 
         const q = query(
@@ -20,6 +23,6 @@ export async function GET(_, { params }) {
         return NextResponse.json({ success: true, proposals });
     } catch (error) {
         console.error('Error fetching reviewed proposals:', error);
-        return NextResponse.json({ success: false, error: (error).message }, { status: 500 });
+        return NextResponse.json({ success: false, error: error.message }, { status: 500 });
     }
 }
