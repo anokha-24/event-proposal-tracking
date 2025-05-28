@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(_, { params }) {
     try {
-        const userRef = doc(db, 'Auth', await params.uid);
+        const userRef = doc(db, 'Auth', await params.id);
         const userSnap = await getDoc(userRef);
 
         if (!userSnap.exists()) {
