@@ -7,24 +7,33 @@ export async function PATCH(req, { params }) {
         const { status, comment, reviewerUid } = await req.json();
 
         if (!status || !comment || !reviewerUid) {
-            return NextResponse.json({ success: false, message: 'Missing required fields' }, { status: 400 });
+            return NextResponse.json(
+                { success: false, message: 'Missing required fields' },
+                { status: 400 }
+            );
         }
 
         // Get reviewer info
         const reviewerRef = doc(db, 'Auth', reviewerUid);
         const reviewerSnap = await getDoc(reviewerRef);
         if (!reviewerSnap.exists()) {
-            return NextResponse.json({ success: false, message: 'Reviewer not found' }, { status: 404 });
+            return NextResponse.json(
+                { success: false, message: 'Reviewer not found' },
+                { status: 404 }
+            );
         }
 
         const reviewerInfo = reviewerSnap.data();
 
         // Get proposal
-        const proposalRef = doc(db, 'Proposals', await(params).proposalId);
+        const proposalRef = doc(db, 'Proposals', await params.proposalId);
         const proposalSnap = await getDoc(proposalRef);
 
         if (!proposalSnap.exists()) {
-            return NextResponse.json({ success: false, message: 'Proposal not found' }, { status: 404 });
+            return NextResponse.json(
+                { success: false, message: 'Proposal not found' },
+                { status: 404 }
+            );
         }
 
         const proposalData = proposalSnap.data();
@@ -48,6 +57,6 @@ export async function PATCH(req, { params }) {
         return NextResponse.json({ success: true });
     } catch (error) {
         console.error('Error updating proposal status:', error);
-        return NextResponse.json({ success: false, error: (error).message }, { status: 500 });
+        return NextResponse.json({ success: false, error: error.message }, { status: 500 });
     }
 }
