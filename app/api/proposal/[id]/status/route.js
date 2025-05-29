@@ -12,6 +12,9 @@ import {
 } from 'firebase/firestore';
 import { db } from '@/app/firebase/firebase';
 
+/**
+ * Update proposal status and manage history entries
+ */
 export async function PUT(req, { params }) {
     const proposalId = await params.id;
     const { newStatus, remarks, userId } = await req.json();
