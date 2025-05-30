@@ -136,7 +136,7 @@ required through the Firebase console. Follow these steps to modify user roles:
 5. A document details panel will appear displaying all user fields and data
 6. Locate the "role" field within the document
 7. Click on the edit icon next to the "role" field
-8. Update the role value to the desired permission level (e.g., "User", "Reviewer", "Admin")
+8. Update the role value to the desired permission level (e.g., "User", "Reviewer")
 9. Click "Update" to save the changes
 
 ## Note:
@@ -145,12 +145,8 @@ Role changes take effect immediately and will be reflected in the application up
 next authentication or page refresh.
 
 ## Reference Screenshot:
+![Screenshot 2025-05-30 182409](https://github.com/user-attachments/assets/08415d00-eb4e-4dbd-9939-8fc56761149a)
 
-```sh
-
-![image](https://github.com/user-attachments/assets/8f4f4cf5-69bb-4a5d-b000-752fb8592749)
-
-```
 ---
 
 ## 🧼 Code Formatting (Prettier)
