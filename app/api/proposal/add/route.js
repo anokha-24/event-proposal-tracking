@@ -1,22 +1,32 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/app/firebase/firebase';
+import { createProposalSchema } from '@/schemas/proposal.schema';
 
 export async function POST(req) {
     try {
-        const proposalData = await req.json();
+        const json = await req.json();
+        const validatedData = createProposalSchema.parse(json);
 
-        // Remove id if exists
-        const { id, ...dataToStore } = proposalData;
+        const { id, currentReviewer, ...dataToStore } = validatedData;
 
-        // Initialize comments as empty array
-        dataToStore.comments = [];
+        if (!currentReviewer || !currentReviewer.reviewerId) {
+            return NextResponse.json(
+                { error: 'Missing current reviewer information' },
+                { status: 400 }
+            );
+        }
 
-        const docRef = await addDoc(collection(db, 'Proposals'), {
+        const enrichedProposal = {
             ...dataToStore,
+            currentReviewer, // level of reviewer can be inferred from currentReviewer information
+            reviewerHistory: [],
+            comments: [],
             createdAt: serverTimestamp(),
             updatedAt: serverTimestamp(),
-        });
+        };
+
+        const docRef = await addDoc(collection(db, 'Proposals'), enrichedProposal);
 
         return NextResponse.json({ success: true, id: docRef.id });
     } catch (error) {
