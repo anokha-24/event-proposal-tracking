@@ -122,6 +122,35 @@ npm run dev
 
 Your Firebase project is now ready to use with your application!
 
+## Managing User Roles in Firebase
+
+When developing or testing user and reviewer functionalities, manual role adjustment may be
+required through the Firebase console. Follow these steps to modify user roles:
+
+## Steps to Update User Roles:
+
+1. Navigate to your Firebase project console
+2. Select "Firestore Database" from the left sidebar
+3. Click on your preferred collection (typically "Auth" or "Users")
+4. Select the specific document for the user whose role needs modification
+5. A document details panel will appear displaying all user fields and data
+6. Locate the "role" field within the document
+7. Click on the edit icon next to the "role" field
+8. Update the role value to the desired permission level (e.g., "User", "Reviewer", "Admin")
+9. Click "Update" to save the changes
+
+## Note:
+
+Role changes take effect immediately and will be reflected in the application upon the user's
+next authentication or page refresh.
+
+## Reference Screenshot:
+
+```sh
+
+![image](https://github.com/user-attachments/assets/8f4f4cf5-69bb-4a5d-b000-752fb8592749)
+
+```
 ---
 
 ## 🧼 Code Formatting (Prettier)
