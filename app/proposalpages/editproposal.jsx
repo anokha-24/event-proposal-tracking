@@ -92,7 +92,12 @@ export default function EditProposalContent({ proposalId, onBack }) {
             try {
                 setLoading(true);
 
-                const proposalData = await getProposalById(proposalId);
+                const proposalData = await fetch($`/api/proposal/${proposalId}`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                });
 
                 if (proposalData == null) {
                     setError('Proposal not found');
@@ -285,7 +290,13 @@ export default function EditProposalContent({ proposalId, onBack }) {
             const { id, ...proposalWithoutId } = updatedProposal;
 
             // Update the proposal document
-            await updateProposal(proposalId, proposalWithoutId);
+            await fetch(`/api/proposal/${proposalId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(updatedProposal),
+            });
 
             setSuccess(
                 isCreatingNewVersion
