@@ -84,6 +84,43 @@ Replace the values with the ones from:
 ```sh
 npm run dev
 ```
+## To create a project in firebase follow these steps carefully:
+
+1. Go to the Firebase Console
+2. Click on "Add project" or "Create a project" button
+3. Enter your project name (e.g., "anokha-techfest-proposals")
+4. Click "Continue"
+5. Choose whether to enable Google Analytics for your project:
+   - Select "Enable Google Analytics for this project" if you want analytics
+   - Or toggle it off if you don't need analytics
+   - Click "Continue"
+6. If you enabled Analytics, configure Google Analytics:
+   - Select your Analytics account or create a new one
+   - Choose your country/region
+   - Accept the terms and click "Create project"
+7. Wait for Firebase to set up your project (this may take a few moments)
+8. Click "Continue" when the setup is complete
+9. You'll be redirected to your Firebase project dashboard
+10. Set up Authentication:
+   - Click on "Authentication" in the left sidebar
+   - Click "Get started"
+   - Go to the "Sign-in method" tab
+   - Enable your preferred sign-in providers (Email/Password is recommended)
+11. Set up Firestore Database:
+   - Click on "Firestore Database" in the left sidebar
+   - Click "Create database"
+   - Choose "Start in test mode" for development (you can change this later)
+   - Select your database location
+   - Click "Done"
+12. Get your Firebase configuration:
+   - Click on the gear icon (⚙️) next to "Project Overview"
+   - Select "Project settings"
+   - Scroll down to "Your apps" section
+   - Click on the web icon </>
+   - Register your app with a nickname
+   - Copy the configuration object for your .env.local file
+
+Your Firebase project is now ready to use with your application!
 
 ---
 
