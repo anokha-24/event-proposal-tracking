@@ -102,23 +102,23 @@ npm run dev
 8. Click "Continue" when the setup is complete
 9. You'll be redirected to your Firebase project dashboard
 10. Set up Authentication:
-   - Click on "Authentication" in the left sidebar
-   - Click "Get started"
-   - Go to the "Sign-in method" tab
-   - Enable your preferred sign-in providers (Email/Password is recommended)
+    - Click on "Authentication" in the left sidebar
+    - Click "Get started"
+    - Go to the "Sign-in method" tab
+    - Enable your preferred sign-in providers (Email/Password is recommended)
 11. Set up Firestore Database:
-   - Click on "Firestore Database" in the left sidebar
-   - Click "Create database"
-   - Choose "Start in test mode" for development (you can change this later)
-   - Select your database location
-   - Click "Done"
+    - Click on "Firestore Database" in the left sidebar
+    - Click "Create database"
+    - Choose "Start in test mode" for development (you can change this later)
+    - Select your database location
+    - Click "Done"
 12. Get your Firebase configuration:
-   - Click on the gear icon (⚙️) next to "Project Overview"
-   - Select "Project settings"
-   - Scroll down to "Your apps" section
-   - Click on the web icon </>
-   - Register your app with a nickname
-   - Copy the configuration object for your .env.local file
+    - Click on the gear icon (⚙️) next to "Project Overview"
+    - Select "Project settings"
+    - Scroll down to "Your apps" section
+    - Click on the web icon </>
+    - Register your app with a nickname
+    - Copy the configuration object for your .env.local file
 
 Your Firebase project is now ready to use with your application!
 
