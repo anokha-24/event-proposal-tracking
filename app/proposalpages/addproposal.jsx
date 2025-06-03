@@ -60,6 +60,7 @@ export default function AddProposalContent() {
     const [success, setSuccess] = useState('');
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [user, setUser] = useState(null);
+    const [reviewers, setReviewers] = useState([]);
     const topRef = useRef(null);
 
     useEffect(() => {
@@ -89,9 +90,19 @@ export default function AddProposalContent() {
                 setError('You must be logged in to submit a proposal');
             }
         });
-
         return () => unsubscribe();
     }, []);
+
+    useEffect(() => {
+        const fetchAvailableReviewers = async () => {
+            const data = await apiRequest(`/api/reviewer?level=0&department=${user.department}`);
+            console.log(data);
+        };
+        if (user && user.department) {
+            console.log('User: ', user);
+            fetchAvailableReviewers();
+        }
+    }, [user]);
 
     const scrollToTop = () => {
         setTimeout(() => {
@@ -163,12 +174,23 @@ export default function AddProposalContent() {
                 version: 1,
                 createdAt: new Date().toISOString(),
             };
+            console.log('Data', JSON.stringify(proposalData));
 
             if (values.isIndividual) {
                 delete proposalData.groupDetails;
             }
 
-            await addProposal(proposalData);
+            // await fetch(
+            //     '/api/proposal/add',{
+            //         method: 'POST',
+            //         body: JSON.stringify(proposalData),
+            //     }
+            // )
+
+            await apiRequest(`/api/proposal/add`, {
+                method: 'POST',
+                body: JSON.stringify(proposalData),
+            });
 
             setSuccess('Proposal submitted successfully!');
             form.reset();
@@ -625,28 +647,40 @@ export default function AddProposalContent() {
                                             <FormItem className='flex items-center space-x-4'>
                                                 <FormControl>
                                                     <div className='flex space-x-4'>
-                                                        <label className='inline-flex items-center'>
+                                                        <div>
                                                             <input
                                                                 type='radio'
-                                                                checked={field.value}
+                                                                id='event-option'
+                                                                checked={field.value === true}
                                                                 onChange={() =>
                                                                     field.onChange(true)
                                                                 }
                                                                 className='form-radio'
                                                             />
-                                                            <span className='ml-2'>Event</span>
-                                                        </label>
-                                                        <label className='inline-flex items-center'>
+                                                            <label
+                                                                htmlFor='event-option'
+                                                                className='ml-2 text-white'
+                                                            >
+                                                                Event
+                                                            </label>
+                                                        </div>
+                                                        <div>
                                                             <input
                                                                 type='radio'
-                                                                checked={!field.value}
+                                                                id='workshop-option'
+                                                                checked={field.value === false}
                                                                 onChange={() =>
                                                                     field.onChange(false)
                                                                 }
                                                                 className='form-radio'
                                                             />
-                                                            <span className='ml-2'>Workshop</span>
-                                                        </label>
+                                                            <label
+                                                                htmlFor='workshop-option'
+                                                                className='ml-2 text-white'
+                                                            >
+                                                                Workshop
+                                                            </label>
+                                                        </div>
                                                     </div>
                                                 </FormControl>
                                             </FormItem>
@@ -665,30 +699,40 @@ export default function AddProposalContent() {
                                             <FormItem className='flex items-center space-x-4'>
                                                 <FormControl>
                                                     <div className='flex space-x-4'>
-                                                        <label className='inline-flex items-center'>
+                                                        <div>
                                                             <input
                                                                 type='radio'
-                                                                checked={field.value}
+                                                                id='technical-option'
+                                                                checked={field.value === true}
                                                                 onChange={() =>
                                                                     field.onChange(true)
                                                                 }
                                                                 className='form-radio'
                                                             />
-                                                            <span className='ml-2'>Technical</span>
-                                                        </label>
-                                                        <label className='inline-flex items-center'>
+                                                            <label
+                                                                htmlFor='technical-option'
+                                                                className='ml-2 text-white'
+                                                            >
+                                                                Technical
+                                                            </label>
+                                                        </div>
+                                                        <div>
                                                             <input
                                                                 type='radio'
-                                                                checked={!field.value}
+                                                                id='nontechnical-option'
+                                                                checked={field.value === false}
                                                                 onChange={() =>
                                                                     field.onChange(false)
                                                                 }
                                                                 className='form-radio'
                                                             />
-                                                            <span className='ml-2'>
+                                                            <label
+                                                                htmlFor='nontechnical-option'
+                                                                className='ml-2 text-white'
+                                                            >
                                                                 Non-Technical
-                                                            </span>
-                                                        </label>
+                                                            </label>
+                                                        </div>
                                                     </div>
                                                 </FormControl>
                                             </FormItem>
