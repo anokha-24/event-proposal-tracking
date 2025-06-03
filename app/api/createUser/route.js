@@ -21,8 +21,14 @@ if (!admin.apps.length) {
 export async function POST(request) {
     try {
         const { email, password, name, role, department, level } = await request.json();
-
-        if (!email || !password || !name || !role) {
+        console.log(level);
+        if (
+            !email ||
+            !password ||
+            !name ||
+            !role ||
+            (role.toLowerCase() == 'reviewer' && (level == undefined || level == null))
+        ) {
             return NextResponse.json({ error: 'Required fields are missing' }, { status: 400 });
         }
 
@@ -42,10 +48,9 @@ export async function POST(request) {
             initialPassword: password,
         };
 
-        if (role == 'Reviewer') {
+        if (role.toLowerCase() == 'reviewer') {
             userData.level = level;
         }
-
         // Create the user document in Firestore
         const db = admin.firestore();
         await db.collection('Auth').doc(userRecord.uid).set(userData);

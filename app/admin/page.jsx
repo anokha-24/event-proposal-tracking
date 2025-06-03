@@ -11,6 +11,7 @@ import { UserIcon, UsersIcon, Trash2Icon, LogOutIcon, XIcon, Loader2 } from 'luc
 import { Combobox } from '@/components/ui/combo-box';
 import { Input } from '@/components/ui/input';
 import apiRequest from '@/utils/apiRequest';
+import { ComboboxLevel } from '@/components/ui/combo-box-level';
 
 const departments = [
     { value: 'CSE', label: 'CSE' },
@@ -18,6 +19,12 @@ const departments = [
     { value: 'EEE', label: 'EEE' },
     { value: 'MECH', label: 'MECH' },
     { value: 'CIVIL', label: 'CIVIL' },
+];
+
+const levels = [
+    { value: 0, label: 'Level 0' },
+    { value: 1, label: 'Level 1' },
+    { value: 2, label: 'Level 2' },
 ];
 
 const AdminPanel = () => {
@@ -185,6 +192,7 @@ const SignUpForm = ({ setUsers }) => {
     const [success, setSuccess] = useState('');
     const [generatedPassword, setGeneratedPassword] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [level, setLevel] = useState(''); // For storing level of reviewer
 
     const generatePassword = () => {
         const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -232,18 +240,21 @@ const SignUpForm = ({ setUsers }) => {
             const departmentData = role === 'Reviewer' ? selectedDepartments : department;
             const dbRole = role === 'User' ? 'user' : 'reviewer';
 
+            const userData = {
+                email,
+                password,
+                name,
+                role: dbRole,
+                department: departmentData,
+            };
+            role == 'Reviewer' ? (userData.level = level) : '';
+
             const response = await fetch('/api/createUser', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({
-                    email,
-                    password,
-                    name,
-                    role: dbRole,
-                    department: departmentData,
-                }),
+                body: JSON.stringify(userData),
             });
 
             if (!response.ok) {
@@ -428,6 +439,20 @@ const SignUpForm = ({ setUsers }) => {
                                 />
                             )}
                         </div>
+
+                        {role == 'Reviewer' && (
+                            <div>
+                                <label className='block text-sm font-medium mb-1 text-gray-300'>
+                                    Level of Reviewer
+                                </label>
+                                <ComboboxLevel
+                                    options={levels}
+                                    selected={level}
+                                    setSelected={setLevel}
+                                    className='w-full'
+                                />
+                            </div>
+                        )}
 
                         <div>
                             <label className='block text-sm font-medium mb-1 text-gray-300'>
