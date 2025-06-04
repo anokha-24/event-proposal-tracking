@@ -40,6 +40,7 @@ export const createProposalSchema = z
             reviewerId: z.string(),
             name: z.string(),
             email: z.string().email(),
+            level: z.number(),
         }),
 
         status: z.literal('Pending'),

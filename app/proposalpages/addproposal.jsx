@@ -21,6 +21,7 @@ import { Loader2 } from 'lucide-react';
 import { auth } from '../firebase/firebase';
 import { addProposal } from '../api/proposalService';
 import apiRequest from '@/utils/apiRequest';
+import { ComboboxReviewer } from '@/components/ui/combo-box-reviewer';
 
 const formSchema = z.object({
     title: z.string().min(5, 'Title must be at least 5 characters'),
@@ -61,6 +62,7 @@ export default function AddProposalContent() {
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [user, setUser] = useState(null);
     const [reviewers, setReviewers] = useState([]);
+    const [selectedReviewer, setSelectedReviewer] = useState(null);
     const topRef = useRef(null);
 
     useEffect(() => {
@@ -97,6 +99,7 @@ export default function AddProposalContent() {
         const fetchAvailableReviewers = async () => {
             const data = await apiRequest(`/api/reviewer?level=0&department=${user.department}`);
             console.log(data);
+            setReviewers(data);
         };
         if (user && user.department) {
             console.log('User: ', user);
@@ -164,6 +167,14 @@ export default function AddProposalContent() {
                 method: 'GET',
             });
 
+            const currentReviewerObj = reviewers.find((r) => r.id === selectedReviewer);
+
+            if (!currentReviewerObj) {
+                setError('Please select a valid reviewer.');
+                setIsSubmitting(false);
+                return;
+            }
+
             const proposalData = {
                 ...values,
                 proposerId: user.uid,
@@ -173,6 +184,12 @@ export default function AddProposalContent() {
                 status: 'Pending',
                 version: 1,
                 createdAt: new Date().toISOString(),
+                currentReviewer: {
+                    reviewerId: currentReviewerObj.id,
+                    name: currentReviewerObj.name,
+                    email: currentReviewerObj.email,
+                    level: currentReviewerObj.level,
+                },
             };
             console.log('Data', JSON.stringify(proposalData));
 
@@ -888,6 +905,22 @@ export default function AddProposalContent() {
                                     )}
                                 />
                             </div>
+                        </div>
+
+                        {/* Selection of Reviewer */}
+                        <div className='p-6 bg-gray-800 rounded-lg shadow-md'>
+                            <h2 className='text-xl font-semibold mb-4 text-blue-400'>
+                                Select Reviewer
+                            </h2>
+
+                            <ComboboxReviewer
+                                options={reviewers.map((r) => ({
+                                    value: r.id,
+                                    label: `${r.name} - [ ${r.email} ]`,
+                                }))}
+                                selected={selectedReviewer}
+                                setSelected={setSelectedReviewer}
+                            />
                         </div>
 
                         {/* Submit Button */}
