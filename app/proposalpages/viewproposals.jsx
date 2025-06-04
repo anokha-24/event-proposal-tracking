@@ -1,10 +1,10 @@
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
-import { getUserProposals } from '../api/proposalService';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import { Edit2, BarChart2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import apiRequest from '@/utils/apiRequest';
 
 export default function ViewProposalsContent({ onEditProposal, onTrackProposal }) {
     const [proposals, setProposals] = useState([]);
@@ -35,8 +35,10 @@ export default function ViewProposalsContent({ onEditProposal, onTrackProposal }
             const fetchProposals = async () => {
                 try {
                     setLoading(true);
-                    const data = await getUserProposals(userId);
-                    setProposals(data);
+                    const data = await apiRequest(`api/user/${userId}/proposal`, {
+                        method: 'GET',
+                    });
+                    setProposals(data.proposals);
                     setError(null);
                     setTimeout(
                         () => scrollContainerRef.current?.scrollTo({ top: 0, behavior: 'smooth' }),

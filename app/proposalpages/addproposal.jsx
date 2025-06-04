@@ -19,7 +19,6 @@ import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2 } from 'lucide-react';
 import { auth } from '../firebase/firebase';
-import { addProposal } from '../api/proposalService';
 import apiRequest from '@/utils/apiRequest';
 import { ComboboxReviewer } from '@/components/ui/combo-box-reviewer';
 

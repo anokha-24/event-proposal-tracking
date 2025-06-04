@@ -92,20 +92,21 @@ export default function EditProposalContent({ proposalId, onBack }) {
             try {
                 setLoading(true);
 
-                const proposalData = await fetch($`/api/proposal/${proposalId}`, {
+                const res = await fetch(`/api/proposal/${proposalId}`, {
                     method: 'GET',
                     headers: {
                         'Content-Type': 'application/json',
                     },
                 });
+                const data = await res.json();
 
-                if (proposalData == null) {
+                if (!data.success || !data.proposal) {
                     setError('Proposal not found');
                     setLoading(false);
                     return;
                 }
 
-                const proposalThread = proposalData;
+                const proposalThread = data.proposal;
 
                 // Check authorization
                 if (proposalThread.proposerId !== userId) {

@@ -17,9 +17,7 @@ export async function GET(_, { params }) {
 
         const q = query(
             collection(db, 'Proposals'),
-            where('proposerId', '==', userId),
-            orderBy('updatedAt', 'desc')
-        );
+            where('proposerId', '==', userId));
         const querySnapshot = await getDocs(q);
 
         const proposals = querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
