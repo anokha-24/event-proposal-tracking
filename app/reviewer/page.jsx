@@ -63,6 +63,7 @@ export default function ReviewerPage() {
                     role: 'Reviewer', // Standardized role name
                     departments: userDepartments,
                     email: firestoreData.email || user.email || '',
+                    level: user.level,
                 };
 
                 // Update session storage

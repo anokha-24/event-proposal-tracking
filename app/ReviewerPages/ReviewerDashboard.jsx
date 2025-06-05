@@ -7,6 +7,7 @@ import { onAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { ClipboardList, CheckCircle, XCircle, Clock, FileText } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import apiRequest from '@/utils/apiRequest';
 
 export default function ReviewerDashboardContent({ onNavigate }) {
     const [loading, setLoading] = useState(true);
@@ -44,7 +45,7 @@ export default function ReviewerDashboardContent({ onNavigate }) {
                         });
 
                         // Load proposals statistics using the departments from session
-                        await loadProposalsStatistics(authData.departments);
+                        await loadProposalsStatistics(authData.departments, user.uid);
                         setError(null);
                         return;
                     }
@@ -105,7 +106,7 @@ export default function ReviewerDashboardContent({ onNavigate }) {
             });
 
             // Load proposals statistics
-            await loadProposalsStatistics(departments);
+            await loadProposalsStatistics(departments, user.uid);
             setError(null);
         } catch (err) {
             console.error('Error setting up reviewer:', err);
@@ -115,7 +116,7 @@ export default function ReviewerDashboardContent({ onNavigate }) {
         }
     };
 
-    const loadProposalsStatistics = async (departments) => {
+    const loadProposalsStatistics = async (departments, reviewerId) => {
         try {
             setRefreshing(true);
 
@@ -131,8 +132,11 @@ export default function ReviewerDashboardContent({ onNavigate }) {
                 return;
             }
 
-            const proposals = await getReviewerProposals(departments);
-
+            // const proposals = await getReviewerProposals(departments);
+            const res = await apiRequest(`/api/reviewer/${reviewerId}/proposals`, {
+                method: 'GET',
+            });
+            const proposals = res.proposals;
             setStatistics({
                 pending: proposals.filter((p) => p.status?.toLowerCase() === 'pending' || !p.status)
                     .length,
