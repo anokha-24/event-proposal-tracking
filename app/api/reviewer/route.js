@@ -24,7 +24,7 @@ export async function GET(req) {
     try {
         let department = deptParam;
 
-        // Infer department from userId if not explicitly provided
+        // Infer department if userId is given and department is not
         if (!department && userIdParam) {
             const userSnap = await getDocs(
                 query(collection(db, 'Auth'), where('uid', '==', userIdParam))
@@ -42,30 +42,24 @@ export async function GET(req) {
             }
         }
 
-        if (!department) {
-            return NextResponse.json(
-                { error: 'Either department or userId must be provided' },
-                { status: 400 }
-            );
-        }
-
-        // Fetch all reviewers with given level
         const baseQuery = query(
             collection(db, 'Auth'),
             where('role', '==', 'reviewer'),
             where('level', '==', level)
         );
         const reviewersSnap = await getDocs(baseQuery);
+        let reviewers = reviewersSnap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
 
-        const reviewers = reviewersSnap.docs
-            .map((doc) => ({ id: doc.id, ...doc.data() }))
-            .filter((reviewer) => {
+        // Apply department filter only if department is known
+        if (department) {
+            reviewers = reviewers.filter((reviewer) => {
                 const dept = reviewer.department;
                 return (
                     (typeof dept === 'string' && dept === department) ||
                     (Array.isArray(dept) && dept.includes(department))
                 );
             });
+        }
 
         return NextResponse.json(reviewers);
     } catch (error) {

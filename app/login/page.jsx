@@ -68,6 +68,7 @@ const SignIn = () => {
                             departments = Object.values(departments);
                         }
                         sessionStorage.setItem('departments', JSON.stringify(departments || []));
+                        sessionStorage.setItem('level', userData.level);
 
                         // Also set the auth object that reviewer page is looking for
                         const authSession = {

@@ -2,9 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '@/app/firebase/firebase';
 
-export async function GET(_, { params }) {
+export async function GET(_, context) {
     try {
-        const reviewerId = await params.id;
+        const reviewerId = (await context).params.id;
 
         if (!reviewerId) {
             return NextResponse.json(

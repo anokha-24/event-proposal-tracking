@@ -27,7 +27,9 @@ import {
     IndianRupee,
     Users2,
 } from 'lucide-react';
-import { getReviewerProposals, updateProposalStatusReviewer } from '../api/reviewerService';
+import { updateProposalStatusReviewer } from '../api/reviewerService';
+import apiRequest from '@/utils/apiRequest';
+import { ComboboxReviewer } from '@/components/ui/combo-box-reviewer';
 
 export default function ReviewerProposalViewContent({ onBack, filterStatus = 'all' }) {
     const [proposals, setProposals] = useState([]);
@@ -40,6 +42,9 @@ export default function ReviewerProposalViewContent({ onBack, filterStatus = 'al
     const [reviewStatus, setReviewStatus] = useState('Approved');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [successMessage, setSuccessMessage] = useState('');
+    const [nextReviewers, setNextReviewers] = useState([]);
+    const [filteredReviewers, setFilteredReviewers] = useState([]);
+    const [selectedReviewer, setSelectedReviewer] = useState(null);
     const [statistics, setStatistics] = useState({
         total: 0,
         pending: 0,
@@ -54,6 +59,25 @@ export default function ReviewerProposalViewContent({ onBack, filterStatus = 'al
     const handleLogout = () => {
         router.push('/');
     };
+
+    useEffect(() => {
+        const selectedProposalObj = proposals.find((proposal) => proposal.id === expandedProposal);
+        const selectedDept = selectedProposalObj?.department;
+
+        if (!selectedDept) {
+            setFilteredReviewers([]);
+            return;
+        }
+
+        const filtered = nextReviewers.filter((reviewer) => {
+            const dept = reviewer.department;
+            return typeof dept === 'string'
+                ? dept === selectedDept
+                : Array.isArray(dept) && dept.includes(selectedDept);
+        });
+
+        setFilteredReviewers(filtered);
+    }, [expandedProposal, proposals, nextReviewers]);
 
     // Set filter when filterStatus prop changes
     useEffect(() => {
@@ -110,6 +134,7 @@ export default function ReviewerProposalViewContent({ onBack, filterStatus = 'al
                 const isUser = sessionStorage.getItem('user');
                 const role = sessionStorage.getItem('role');
                 const name = sessionStorage.getItem('name');
+                const level = sessionStorage.getItem('level');
                 let departments = [];
 
                 try {
@@ -130,13 +155,18 @@ export default function ReviewerProposalViewContent({ onBack, filterStatus = 'al
                         displayName: name || 'Reviewer',
                         name: name || 'Reviewer',
                         departments: departments || [],
+                        level: level,
                     };
 
                     setReviewer(reviewerData);
 
                     try {
                         const directResults = await directQueryProposals(departments);
-                        const fetchedProposals = await getReviewerProposals(departments);
+                        // const fetchedProposals = await getReviewerProposals(departments);
+                        const res = await apiRequest(`/api/reviewer/${user.uid}/proposals`, {
+                            method: 'GET',
+                        });
+                        const fetchedProposals = res.proposals;
 
                         setProposals(fetchedProposals);
 
@@ -174,6 +204,8 @@ export default function ReviewerProposalViewContent({ onBack, filterStatus = 'al
                 const reviewerRef = doc(db, 'Reviewers', user.uid);
                 const reviewerDoc = await getDoc(reviewerRef);
 
+                console.log(reviewerRef, reviewerDoc);
+
                 if (!reviewerDoc.exists()) {
                     throw new Error(
                         "You don't have reviewer privileges. Please contact the administrator."
@@ -181,6 +213,7 @@ export default function ReviewerProposalViewContent({ onBack, filterStatus = 'al
                 }
 
                 const reviewerData = reviewerDoc.data();
+                console.log('Reviewer Data: ', reviewerData);
 
                 // Process departments properly
                 let userDepartments = reviewerData.department || [];
@@ -201,6 +234,7 @@ export default function ReviewerProposalViewContent({ onBack, filterStatus = 'al
                     name: reviewerData.name || 'Reviewer',
                     role: 'Reviewer', // Standardized to capital R
                     departments: userDepartments,
+                    level: reviewerData.level,
                 };
 
                 // Set both auth formats in session storage for compatibility
@@ -209,6 +243,7 @@ export default function ReviewerProposalViewContent({ onBack, filterStatus = 'al
                 sessionStorage.setItem('role', 'Reviewer');
                 sessionStorage.setItem('name', reviewerData.name || '');
                 sessionStorage.setItem('departments', JSON.stringify(userDepartments));
+                sessionStorage.setItem('level', reviewerData.level);
 
                 // Set reviewer data
                 setReviewer({
@@ -217,12 +252,17 @@ export default function ReviewerProposalViewContent({ onBack, filterStatus = 'al
                     displayName: reviewerData.name || 'Reviewer',
                     name: reviewerData.name || 'Reviewer',
                     departments: userDepartments,
+                    level: reviewerData.level,
                     ...reviewerData,
                 });
 
                 try {
                     const directResults = await directQueryProposals(userDepartments);
-                    const fetchedProposals = await getReviewerProposals(userDepartments);
+                    // const fetchedProposals = await getReviewerProposals(userDepartments);
+                    const res = await apiRequest(`/api/reviewer/${user.uid}/proposals`, {
+                        method: 'GET',
+                    });
+                    const fetchedProposals = res.proposals;
 
                     setProposals(fetchedProposals);
 
@@ -263,6 +303,15 @@ export default function ReviewerProposalViewContent({ onBack, filterStatus = 'al
 
         return () => unsubscribe();
     }, [router]);
+
+    useEffect(() => {
+        const fetchAvailableReviewers = async () => {
+            const data = await apiRequest(`/api/reviewer?level=${parseInt(reviewer.level) + 1}`);
+            console.log(data);
+            setNextReviewers(data);
+        };
+        if (reviewer) fetchAvailableReviewers();
+    }, [reviewer]);
 
     const fetchProposalHistory = async (proposalId) => {
         try {
@@ -368,8 +417,8 @@ export default function ReviewerProposalViewContent({ onBack, filterStatus = 'al
     };
 
     const handleSubmitReview = async (proposalId) => {
-        if (!reviewComment.trim()) {
-            alert('Please provide a review comment before submitting.');
+        if (!reviewComment.trim() || (reviewStatus=="Approve" && !selectedReviewer)) {
+            alert('Please provide a review comment or select next reviewer before submitting.');
             return;
         }
 
@@ -432,6 +481,10 @@ export default function ReviewerProposalViewContent({ onBack, filterStatus = 'al
             setIsSubmitting(false);
         }
     };
+
+    useEffect(() => {
+        console.log(proposals);
+    }, [proposals]);
 
     const filteredProposals =
         filter === 'all'
@@ -1198,7 +1251,7 @@ export default function ReviewerProposalViewContent({ onBack, filterStatus = 'al
                                                                     size={14}
                                                                     className='mr-1 flex-shrink-0'
                                                                 />
-                                                                <span>Approve</span>
+                                                                <span>{'Approve'}</span>
                                                             </button>
 
                                                             <button
@@ -1220,6 +1273,25 @@ export default function ReviewerProposalViewContent({ onBack, filterStatus = 'al
                                                             </button>
                                                         </div>
                                                     </div>
+
+                                                    {reviewStatus == 'Approved' && (
+                                                        <div className='p-6 bg-gray-800 rounded-lg shadow-md'>
+                                                            <label className='block text-xs font-medium text-gray-400 mb-1'>
+                                                                Select next reviewer
+                                                            </label>
+
+                                                            <ComboboxReviewer
+                                                                options={filteredReviewers.map(
+                                                                    (r) => ({
+                                                                        value: r.id,
+                                                                        label: `${r.name} - [ ${r.email} ]`,
+                                                                    })
+                                                                )}
+                                                                selected={selectedReviewer}
+                                                                setSelected={setSelectedReviewer}
+                                                            />
+                                                        </div>
+                                                    )}
 
                                                     <div>
                                                         <label className='block text-xs font-medium text-gray-400 mb-1'>
