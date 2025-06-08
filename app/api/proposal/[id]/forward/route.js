@@ -1,14 +1,17 @@
 import { db } from '@/app/firebase/firebase';
+import { forwardProposalSchema } from '@/schemas/proposal.schema';
 import { doc, getDoc, updateDoc, arrayUnion, serverTimestamp } from 'firebase/firestore';
 import { NextResponse } from 'next/server';
 
 // POST /api/proposal/[id]/forward
 export async function POST(req, { params }) {
-    const proposalId = await params.id;
-
+    const p = await params;
+    const proposalId = p.id;
     try {
         const body = await req.json();
+        console.log('Body', body);
         const parseResult = forwardProposalSchema.safeParse(body);
+        console.log('Parsed Body', parseResult);
         if (!parseResult.success) {
             return NextResponse.json({ error: parseResult.error.flatten() }, { status: 400 });
         }
@@ -35,20 +38,32 @@ export async function POST(req, { params }) {
         const proposalData = proposalSnap.data();
         const currentReviewer = proposalData.currentReviewer;
 
+        console.log('CC', currentReviewer);
+
+        const { reviewerId, name, email } = currentReviewer || {};
+        if (!reviewerId || !name || !email) {
+            return NextResponse.json({ error: 'Invalid currentReviewer data' }, { status: 400 });
+        }
+
         if (!currentReviewer) {
             return NextResponse.json(
                 { error: 'Current reviewer info missing in proposal' },
                 { status: 400 }
             );
         }
+        console.log('##########', comments);
 
         const historyEntry = {
-            ...currentReviewer,
-            level: proposalData.level || 1,
+            reviewerId,
+            name,
+            email,
+            level: currentReviewer.level || nextReviewer.level - 1,
             decision,
-            comments,
-            reviewedAt: serverTimestamp(),
+            comments: comments,
+            reviewedAt: new Date(),
         };
+
+        console.log(historyEntry);
 
         await updateDoc(proposalRef, {
             reviewerHistory: arrayUnion(historyEntry),

@@ -59,9 +59,11 @@ export const createProposalSchema = z
 
 export const forwardProposalSchema = z.object({
     decision: z.enum(['approved', 'rejected']),
+    comments: z.string(),
     nextReviewer: z.object({
         reviewerId: z.string(),
         name: z.string(),
         email: z.string().email(),
+        level: z.number(),
     }),
 });

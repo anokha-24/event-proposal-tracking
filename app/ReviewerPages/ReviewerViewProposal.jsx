@@ -161,7 +161,7 @@ export default function ReviewerProposalViewContent({ onBack, filterStatus = 'al
                     setReviewer(reviewerData);
 
                     try {
-                        const directResults = await directQueryProposals(departments);
+                        // const directResults = await directQueryProposals(departments);
                         // const fetchedProposals = await getReviewerProposals(departments);
                         const res = await apiRequest(`/api/reviewer/${user.uid}/proposals`, {
                             method: 'GET',
@@ -170,12 +170,13 @@ export default function ReviewerProposalViewContent({ onBack, filterStatus = 'al
 
                         setProposals(fetchedProposals);
 
-                        if (directResults.length > 0 && fetchedProposals.length === 0) {
-                            setProposals(directResults);
-                        }
+                        // if (directResults.length > 0 && fetchedProposals.length === 0) {
+                        //     setProposals(directResults);
+                        // }
 
-                        const finalProposals =
-                            fetchedProposals.length > 0 ? fetchedProposals : directResults;
+                        // const finalProposals =
+                        //     fetchedProposals.length > 0 ? fetchedProposals : directResults;
+                        const finalProposals = fetchedProposals;
                         setStatistics({
                             total: finalProposals.length,
                             pending: finalProposals.filter(
@@ -257,7 +258,7 @@ export default function ReviewerProposalViewContent({ onBack, filterStatus = 'al
                 });
 
                 try {
-                    const directResults = await directQueryProposals(userDepartments);
+                    // const directResults = await directQueryProposals(userDepartments);
                     // const fetchedProposals = await getReviewerProposals(userDepartments);
                     const res = await apiRequest(`/api/reviewer/${user.uid}/proposals`, {
                         method: 'GET',
@@ -266,12 +267,13 @@ export default function ReviewerProposalViewContent({ onBack, filterStatus = 'al
 
                     setProposals(fetchedProposals);
 
-                    if (directResults.length > 0 && fetchedProposals.length === 0) {
-                        setProposals(directResults);
-                    }
+                    // if (directResults.length > 0 && fetchedProposals.length === 0) {
+                    //     setProposals(directResults);
+                    // }
 
-                    const finalProposals =
-                        fetchedProposals.length > 0 ? fetchedProposals : directResults;
+                    // const finalProposals =
+                    //     fetchedProposals.length > 0 ? fetchedProposals : directResults;
+                    const finalProposals = fetchedProposals;
                     setStatistics({
                         total: finalProposals.length,
                         pending: finalProposals.filter(
@@ -417,7 +419,7 @@ export default function ReviewerProposalViewContent({ onBack, filterStatus = 'al
     };
 
     const handleSubmitReview = async (proposalId) => {
-        if (!reviewComment.trim() || (reviewStatus=="Approve" && !selectedReviewer)) {
+        if (!reviewComment.trim() || (reviewStatus === 'Approve' && !selectedReviewer)) {
             alert('Please provide a review comment or select next reviewer before submitting.');
             return;
         }
@@ -425,47 +427,119 @@ export default function ReviewerProposalViewContent({ onBack, filterStatus = 'al
         setIsSubmitting(true);
 
         try {
-            await updateProposalStatusReviewer(
-                proposalId,
-                reviewStatus,
-                reviewComment,
-                reviewer.displayName || reviewer.name || 'Reviewer'
-            );
+            if (
+                reviewStatus === 'Approved' &&
+                selectedReviewer != null &&
+                selectedReviewer != undefined
+            ) {
+                console.log(nextReviewers, selectedReviewer);
+                const fullReviewer = nextReviewers.find((r) => r.id === selectedReviewer);
 
-            setProposals((prevProposals) =>
-                prevProposals.map((proposal) =>
-                    proposal.id === proposalId
-                        ? {
-                              ...proposal,
-                              status: reviewStatus,
-                              comments: [
-                                  ...(proposal.comments || []),
-                                  {
-                                      text: reviewComment,
-                                      reviewerName:
-                                          reviewer.displayName || reviewer.name || 'Reviewer',
-                                      timestamp: new Date(),
-                                      status: reviewStatus,
-                                  },
-                              ],
-                          }
-                        : proposal
-                )
-            );
+                if (!fullReviewer) {
+                    alert('Reviewer not found in nextReviewers list.');
+                    return;
+                }
+                console.log(fullReviewer);
+                // Case: Forward to next reviewer
+                await apiRequest(`/api/proposal/${proposalId}/forward`, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        decision: 'approved',
+                        comments: reviewComment,
+                        nextReviewer: {
+                            reviewerId: fullReviewer.id,
+                            name: fullReviewer.name,
+                            email: fullReviewer.email,
+                            level: fullReviewer.level,
+                        },
+                    }),
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                });
 
-            setStatistics((prev) => {
-                const newStats = { ...prev };
-                newStats.pending = Math.max(0, newStats.pending - 1);
+                // Update frontend state
+                setProposals((prevProposals) =>
+                    prevProposals.map((proposal) =>
+                        proposal.id === proposalId
+                            ? {
+                                  ...proposal,
+                                  status: 'pending',
+                                  currentReviewer: selectedReviewer,
+                                  reviewerHistory: [
+                                      ...(proposal.reviewerHistory || []),
+                                      {
+                                          ...reviewer,
+                                          level: proposal.level || 1,
+                                          decision: 'approved',
+                                          comments: reviewComment,
+                                          reviewedAt: new Date(),
+                                      },
+                                  ],
+                                  comments: [
+                                      ...(proposal.comments || []),
+                                      {
+                                          text: reviewComment,
+                                          reviewerName:
+                                              reviewer.displayName || reviewer.name || 'Reviewer',
+                                          timestamp: new Date(),
+                                          status: 'approved',
+                                      },
+                                  ],
+                              }
+                            : proposal
+                    )
+                );
 
-                const statusKey =
-                    reviewStatus.toLowerCase() === 'reviewed'
-                        ? 'changes'
-                        : reviewStatus.toLowerCase();
+                setStatistics((prev) => ({
+                    ...prev,
+                    pending: (prev.pending || 0) + 1,
+                    approved: prev.approved, // not approved fully yet, just forwarded
+                }));
+            } else {
+                // Case: Final decision (Reviewed / Rejected etc)
+                await updateProposalStatusReviewer(
+                    proposalId,
+                    reviewStatus,
+                    reviewComment,
+                    reviewer.displayName || reviewer.name || 'Reviewer'
+                );
 
-                newStats[statusKey] = (newStats[statusKey] || 0) + 1;
+                setProposals((prevProposals) =>
+                    prevProposals.map((proposal) =>
+                        proposal.id === proposalId
+                            ? {
+                                  ...proposal,
+                                  status: reviewStatus,
+                                  comments: [
+                                      ...(proposal.comments || []),
+                                      {
+                                          text: reviewComment,
+                                          reviewerName:
+                                              reviewer.displayName || reviewer.name || 'Reviewer',
+                                          timestamp: new Date(),
+                                          status: reviewStatus,
+                                      },
+                                  ],
+                              }
+                            : proposal
+                    )
+                );
 
-                return newStats;
-            });
+                setStatistics((prev) => {
+                    const newStats = { ...prev };
+                    newStats.pending = Math.max(0, newStats.pending - 1);
+
+                    const statusKey =
+                        reviewStatus.toLowerCase() === 'reviewed'
+                            ? 'changes'
+                            : reviewStatus.toLowerCase();
+
+                    newStats[statusKey] = (newStats[statusKey] || 0) + 1;
+
+                    return newStats;
+                });
+            }
 
             setSuccessMessage(`Proposal status updated to "${reviewStatus}" successfully!`);
             setReviewComment('');
@@ -481,10 +555,6 @@ export default function ReviewerProposalViewContent({ onBack, filterStatus = 'al
             setIsSubmitting(false);
         }
     };
-
-    useEffect(() => {
-        console.log(proposals);
-    }, [proposals]);
 
     const filteredProposals =
         filter === 'all'
@@ -1322,7 +1392,8 @@ export default function ReviewerProposalViewContent({ onBack, filterStatus = 'al
                                                             }
                                                             disabled={
                                                                 isSubmitting ||
-                                                                !reviewComment.trim()
+                                                                !reviewComment.trim() ||
+                                                                !selectedReviewer
                                                             }
                                                             className='w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded-md py-2 flex items-center justify-center gap-2 transition whitespace-nowrap'
                                                         >
