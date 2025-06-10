@@ -126,6 +126,19 @@ export default function ViewProposalsContent({ onEditProposal, onTrackProposal }
                                     </div>
                                 </div>
 
+                                {typeof proposal?.currentReviewer?.level === 'number' && (
+                                    <div className='mb-2 w-fit items-center gap-2 text-xs font-medium text-indigo-400 bg-gray-700 px-3 py-1 rounded-full border border-gray-600'>
+                                        <span className='w-1.5 h-1.5 bg-indigo-400 rounded-full'></span>
+                                        Currently under review by{' '}
+                                        <span className='font-semibold'>
+                                            {getReviewerRoleWithName(
+                                                proposal.currentReviewer.level,
+                                                proposal.currentReviewer.name
+                                            )}
+                                        </span>
+                                    </div>
+                                )}
+
                                 <div className='bg-gray-700 py-1 px-3 rounded-full text-sm inline-block mb-4 w-fit'>
                                     Status:{' '}
                                     <span
@@ -167,3 +180,16 @@ function getStatusColor(status) {
         }[status?.toLowerCase()] || 'text-gray-400'
     );
 }
+
+const getReviewerRoleWithName = (level, name) => {
+    switch (level) {
+        case 0:
+            return `Student Head (${name || 'Unknown'})`;
+        case 1:
+            return `Department Faculty (${name || 'Unknown'})`;
+        case 2:
+            return `Tech Council Wing`; // no name shown for TCW
+        default:
+            return `Reviewer Level ${level}`;
+    }
+};

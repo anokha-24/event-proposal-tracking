@@ -855,6 +855,59 @@ export default function ProposalTrackingContent({ proposalId, onBack }) {
                                         </div>
                                     </div>
                                 </div>
+
+                                {proposal.reviewerHistory &&
+                                    proposal.reviewerHistory.length > 0 && (
+                                        <div className='mt-4'>
+                                            <h4 className='text-sm font-medium text-gray-300 mb-2 flex items-center'>
+                                                <History size={16} className='mr-1' />
+                                                Review History:
+                                            </h4>
+
+                                            <div className='space-y-2'>
+                                                {proposal.reviewerHistory.map((entry, idx) => (
+                                                    <div
+                                                        key={idx}
+                                                        className='bg-gray-700 p-3 rounded shadow-sm border border-gray-600'
+                                                    >
+                                                        <div className='flex items-center justify-between'>
+                                                            <div className='text-lg text-gray-300 font-semibold capitalize'>
+                                                                {entry.name || 'Unknown Reviewer'}
+                                                            </div>
+                                                            <div className='text-xs text-gray-400 italic'>
+                                                                Level {entry.level ?? 'N/A'}
+                                                            </div>
+                                                        </div>
+                                                        <div className='mt-1 text-sm text-gray-300'>
+                                                            Decision:{' '}
+                                                            <span
+                                                                className={`capitalize font-medium ${
+                                                                    entry.decision === 'approved'
+                                                                        ? 'text-green-400'
+                                                                        : entry.decision ===
+                                                                            'rejected'
+                                                                          ? 'text-red-400'
+                                                                          : 'text-gray-300'
+                                                                }`}
+                                                            >
+                                                                {entry.decision}
+                                                            </span>
+                                                        </div>
+
+                                                        {entry.comments && (
+                                                            <div className='mt-1 text-sm text-gray-400'>
+                                                                Comments: {entry.comments}
+                                                            </div>
+                                                        )}
+                                                        <div className='mt-1 text-xs text-gray-400'>
+                                                            Reviewed at:{' '}
+                                                            {formatTimestamp(entry.reviewedAt)}
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
                             </div>
                         </div>
                     </div>
