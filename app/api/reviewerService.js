@@ -56,6 +56,7 @@ const getReviewerInfo = async (uid) => {
 /**
  * Get proposals for a reviewer based on their departments
  */
+// NOTE: Do not delete this function
 const getReviewerProposals = async (departments) => {
     try {
         if (!departments || departments.length === 0) {

@@ -69,6 +69,7 @@ export async function POST(req, { params }) {
             reviewerHistory: arrayUnion(historyEntry),
             currentReviewer: { ...nextReviewer },
             updatedAt: serverTimestamp(),
+            ...(nextReviewer.level === 3 && decision == 'approved' && { status: 'Approved' }),
         });
 
         return NextResponse.json({ success: true });

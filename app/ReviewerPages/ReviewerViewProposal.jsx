@@ -27,7 +27,7 @@ import {
     IndianRupee,
     Users2,
 } from 'lucide-react';
-import { updateProposalStatusReviewer } from '../api/reviewerService';
+import { getReviewerProposals, updateProposalStatusReviewer } from '../api/reviewerService';
 import apiRequest from '@/utils/apiRequest';
 import { ComboboxReviewer } from '@/components/ui/combo-box-reviewer';
 import ApprovedProposalsCard from './ApprovedProposalCard';
@@ -163,22 +163,19 @@ export default function ReviewerProposalViewContent({ onBack, filterStatus = 'al
                     setReviewer(reviewerData);
 
                     try {
-                        // const directResults = await directQueryProposals(departments);
-                        // const fetchedProposals = await getReviewerProposals(departments);
-                        const res = await apiRequest(`/api/reviewer/${user.uid}/proposals`, {
-                            method: 'GET',
-                        });
-                        const fetchedProposals = res.proposals;
-
-                        setProposals(fetchedProposals);
-
-                        // if (directResults.length > 0 && fetchedProposals.length === 0) {
-                        //     setProposals(directResults);
-                        // }
-
-                        // const finalProposals =
-                        //     fetchedProposals.length > 0 ? fetchedProposals : directResults;
-                        const finalProposals = fetchedProposals;
+                        let finalProposals = null;
+                        if (reviewerData.level == 2) {
+                            const fetchedProposals = await getReviewerProposals(departments);
+                            setProposals(fetchedProposals);
+                            finalProposals = fetchedProposals;
+                        } else {
+                            const res = await apiRequest(`/api/reviewer/${user.uid}/proposals`, {
+                                method: 'GET',
+                            });
+                            const fetchedProposals = res.proposals;
+                            setProposals(fetchedProposals);
+                            finalProposals = fetchedProposals;
+                        }
                         setStatistics({
                             total: finalProposals.length,
                             pending: finalProposals.filter(
@@ -260,22 +257,20 @@ export default function ReviewerProposalViewContent({ onBack, filterStatus = 'al
                 });
 
                 try {
-                    // const directResults = await directQueryProposals(userDepartments);
-                    // const fetchedProposals = await getReviewerProposals(userDepartments);
-                    const res = await apiRequest(`/api/reviewer/${user.uid}/proposals`, {
-                        method: 'GET',
-                    });
-                    const fetchedProposals = res.proposals;
+                    let finalProposals;
+                    if (reviewerData.level == 2) {
+                        const fetchedProposals = await getReviewerProposals(userDepartments);
+                        setProposals(fetchedProposals);
+                        finalProposals = fetchedProposals;
+                    } else {
+                        const res = await apiRequest(`/api/reviewer/${user.uid}/proposals`, {
+                            method: 'GET',
+                        });
+                        const fetchedProposals = res.proposals;
+                        setProposals(fetchedProposals);
+                        finalProposals = fetchedProposals;
+                    }
 
-                    setProposals(fetchedProposals);
-
-                    // if (directResults.length > 0 && fetchedProposals.length === 0) {
-                    //     setProposals(directResults);
-                    // }
-
-                    // const finalProposals =
-                    //     fetchedProposals.length > 0 ? fetchedProposals : directResults;
-                    const finalProposals = fetchedProposals;
                     setStatistics({
                         total: finalProposals.length,
                         pending: finalProposals.filter(
@@ -456,7 +451,6 @@ export default function ReviewerProposalViewContent({ onBack, filterStatus = 'al
                 selectedReviewer != null &&
                 selectedReviewer != undefined
             ) {
-                console.log(nextReviewers, selectedReviewer);
                 const fullReviewer = nextReviewers.find((r) => r.id === selectedReviewer);
 
                 if (!fullReviewer) {
@@ -520,6 +514,78 @@ export default function ReviewerProposalViewContent({ onBack, filterStatus = 'al
                     pending: (prev.pending || 0) + 1,
                     approved: prev.approved, // not approved fully yet, just forwarded
                 }));
+            } else if (reviewStatus === 'Approved' && reviewer.level != 1) {
+                // Case: Level 2 or 3 reviewer approving without selecting next reviewer
+                // Forward to next level with empty reviewer details
+                const nextLevel = parseInt(reviewer.level) + 1;
+                const isFinalApproval = reviewer.level == 3; // Level 3 is final approval
+
+                await apiRequest(`/api/proposal/${proposalId}/forward`, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        decision: 'approved',
+                        comments: reviewComment,
+                        nextReviewer: {
+                            reviewerId: '',
+                            name: '',
+                            email: '',
+                            level: nextLevel,
+                        },
+                    }),
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                });
+
+                // Update frontend state
+                const newStatus = isFinalApproval ? 'approved' : 'pending';
+
+                setProposals((prevProposals) =>
+                    prevProposals.map((proposal) =>
+                        proposal.id === proposalId
+                            ? {
+                                  ...proposal,
+                                  status: newStatus,
+                                  currentReviewer: isFinalApproval ? '' : '', // Empty for next level
+                                  reviewerHistory: [
+                                      ...(proposal.reviewerHistory || []),
+                                      {
+                                          ...reviewer,
+                                          level: reviewer.level,
+                                          decision: 'approved',
+                                          comments: reviewComment,
+                                          reviewedAt: new Date(),
+                                      },
+                                  ],
+                                  comments: [
+                                      ...(proposal.comments || []),
+                                      {
+                                          text: reviewComment,
+                                          reviewerName:
+                                              reviewer.displayName || reviewer.name || 'Reviewer',
+                                          timestamp: new Date(),
+                                          status: 'approved',
+                                      },
+                                  ],
+                              }
+                            : proposal
+                    )
+                );
+
+                // Update statistics based on whether it's final approval or forwarding
+                if (isFinalApproval) {
+                    setStatistics((prev) => ({
+                        ...prev,
+                        pending: Math.max(0, prev.pending - 1),
+                        approved: prev.approved + 1,
+                    }));
+                } else {
+                    setStatistics((prev) => ({
+                        ...prev,
+                        pending: prev.pending, // Stays pending as it's forwarded to next level
+                        approved: prev.approved,
+                    }));
+                }
             } else {
                 // Case: Final decision (Reviewed / Rejected etc)
                 await updateProposalStatusReviewer(
@@ -824,7 +890,7 @@ export default function ReviewerProposalViewContent({ onBack, filterStatus = 'al
                     <File className='h-12 w-12 mx-auto mb-4 text-gray-500' />
                     <p className='text-gray-400 break-words'>No {filter} proposals found.</p>
                 </div>
-            ) : filter == 'approved' && approvedProposals.length > 0 ? (
+            ) : filter == 'approved' && approvedProposals.length > 0 && reviewer.level != 2 ? (
                 <ApprovedProposalsCard proposals={approvedProposals} />
             ) : (
                 <div className='space-y-4'>
@@ -1375,24 +1441,27 @@ export default function ReviewerProposalViewContent({ onBack, filterStatus = 'al
                                                         </div>
                                                     </div>
 
-                                                    {reviewStatus == 'Approved' && (
-                                                        <div className='p-6 bg-gray-800 rounded-lg shadow-md'>
-                                                            <label className='block text-xs font-medium text-gray-400 mb-1'>
-                                                                Select next reviewer
-                                                            </label>
+                                                    {reviewStatus == 'Approved' &&
+                                                        reviewer.level == 0 && (
+                                                            <div className='p-6 bg-gray-800 rounded-lg shadow-md'>
+                                                                <label className='block text-xs font-medium text-gray-400 mb-1'>
+                                                                    Select next reviewer
+                                                                </label>
 
-                                                            <ComboboxReviewer
-                                                                options={filteredReviewers.map(
-                                                                    (r) => ({
-                                                                        value: r.id,
-                                                                        label: `${r.name} - [ ${r.email} ]`,
-                                                                    })
-                                                                )}
-                                                                selected={selectedReviewer}
-                                                                setSelected={setSelectedReviewer}
-                                                            />
-                                                        </div>
-                                                    )}
+                                                                <ComboboxReviewer
+                                                                    options={filteredReviewers.map(
+                                                                        (r) => ({
+                                                                            value: r.id,
+                                                                            label: `${r.name} - [ ${r.email} ]`,
+                                                                        })
+                                                                    )}
+                                                                    selected={selectedReviewer}
+                                                                    setSelected={
+                                                                        setSelectedReviewer
+                                                                    }
+                                                                />
+                                                            </div>
+                                                        )}
 
                                                     <div>
                                                         <label className='block text-xs font-medium text-gray-400 mb-1'>
@@ -1424,7 +1493,8 @@ export default function ReviewerProposalViewContent({ onBack, filterStatus = 'al
                                                             disabled={
                                                                 isSubmitting ||
                                                                 !reviewComment.trim() ||
-                                                                !selectedReviewer
+                                                                (!selectedReviewer &&
+                                                                    reviewer.level == 1)
                                                             }
                                                             className='w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded-md py-2 flex items-center justify-center gap-2 transition whitespace-nowrap'
                                                         >
