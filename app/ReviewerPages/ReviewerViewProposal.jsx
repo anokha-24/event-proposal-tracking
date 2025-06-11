@@ -30,6 +30,7 @@ import {
 import { updateProposalStatusReviewer } from '../api/reviewerService';
 import apiRequest from '@/utils/apiRequest';
 import { ComboboxReviewer } from '@/components/ui/combo-box-reviewer';
+import ApprovedProposalsCard from './ApprovedProposalCard';
 
 export default function ReviewerProposalViewContent({ onBack, filterStatus = 'all' }) {
     const [proposals, setProposals] = useState([]);
@@ -45,6 +46,7 @@ export default function ReviewerProposalViewContent({ onBack, filterStatus = 'al
     const [nextReviewers, setNextReviewers] = useState([]);
     const [filteredReviewers, setFilteredReviewers] = useState([]);
     const [selectedReviewer, setSelectedReviewer] = useState(null);
+    const [approvedProposals, setApprovedProposals] = useState([]);
     const [statistics, setStatistics] = useState({
         total: 0,
         pending: 0,
@@ -307,12 +309,34 @@ export default function ReviewerProposalViewContent({ onBack, filterStatus = 'al
     }, [router]);
 
     useEffect(() => {
-        const fetchAvailableReviewers = async () => {
-            const data = await apiRequest(`/api/reviewer?level=${parseInt(reviewer.level) + 1}`);
-            console.log(data);
-            setNextReviewers(data);
+        const fetchReviewerData = async () => {
+            if (!reviewer?.uid || !reviewer?.level) return;
+            try {
+                const nextLevel = parseInt(reviewer.level) + 1;
+                console.log('Next level: ', nextLevel);
+                const reviewersRes = await apiRequest(`/api/reviewer?level=${nextLevel}`);
+                setNextReviewers(reviewersRes);
+
+                const approvedProposalsRes = await apiRequest(
+                    `/api/reviewer/${reviewer.uid}/history`
+                );
+                const reviewedProposalsWithMeta = approvedProposalsRes.proposals.map((p) => ({
+                    ...p,
+                    isReviewedHistory: true,
+                }));
+                if (reviewer.level != 2)
+                    setStatistics((prev) => ({
+                        ...prev,
+                        approved: prev.approved + approvedProposalsRes.proposals.length,
+                    }));
+
+                setApprovedProposals(reviewedProposalsWithMeta);
+            } catch (err) {
+                console.error('Error loading reviewer data:', err);
+            }
         };
-        if (reviewer) fetchAvailableReviewers();
+        console.log('REVIEWER', reviewer);
+        if (reviewer) fetchReviewerData();
     }, [reviewer]);
 
     const fetchProposalHistory = async (proposalId) => {
@@ -562,10 +586,10 @@ export default function ReviewerProposalViewContent({ onBack, filterStatus = 'al
             : proposals.filter((proposal) => {
                   if (filter === 'pending') {
                       return proposal.status?.toLowerCase() === 'pending' || !proposal.status;
-                  } else if (filter === 'approved') {
-                      return proposal.status?.toLowerCase() === 'approved';
                   } else if (filter === 'rejected') {
                       return proposal.status?.toLowerCase() === 'rejected';
+                  } else if (filter === 'approved' && reviewer.level == 2) {
+                      return proposal.status?.toLowerCase() === 'approved';
                   } else if (filter === 'changes') {
                       return proposal.status?.toLowerCase() === 'reviewed';
                   }
@@ -783,7 +807,7 @@ export default function ReviewerProposalViewContent({ onBack, filterStatus = 'al
                 </div>
             </div>
 
-            {filteredProposals.length === 0 ? (
+            {filteredProposals.length === 0 && filter != 'approved' ? (
                 <div className='bg-gray-800 rounded-lg p-8 text-center'>
                     <File className='h-12 w-12 mx-auto mb-4 text-gray-500' />
                     <p className='text-gray-400 break-words'>
@@ -795,6 +819,13 @@ export default function ReviewerProposalViewContent({ onBack, filterStatus = 'al
                         Make sure your departments match proposal departments.
                     </p>
                 </div>
+            ) : filter == 'approved' && approvedProposals.length == 0 ? (
+                <div className='bg-gray-800 rounded-lg p-8 text-center'>
+                    <File className='h-12 w-12 mx-auto mb-4 text-gray-500' />
+                    <p className='text-gray-400 break-words'>No {filter} proposals found.</p>
+                </div>
+            ) : filter == 'approved' && approvedProposals.length > 0 ? (
+                <ApprovedProposalsCard proposals={approvedProposals} />
             ) : (
                 <div className='space-y-4'>
                     {filteredProposals.map((proposal) => (

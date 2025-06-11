@@ -76,6 +76,7 @@ const SignIn = () => {
                             name: userData.name || 'Reviewer',
                             role: 'Reviewer', // Standardized to capital R
                             departments: Array.isArray(departments) ? departments : [],
+                            level: userData.level,
                         };
                         sessionStorage.setItem('auth', JSON.stringify(authSession));
 

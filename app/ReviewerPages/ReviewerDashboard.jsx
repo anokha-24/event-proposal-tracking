@@ -42,6 +42,7 @@ export default function ReviewerDashboardContent({ onNavigate }) {
                             email: user.email,
                             displayName: authData.name || user.displayName || 'Reviewer',
                             departments: authData.departments || [],
+                            level: user.level,
                         });
 
                         // Load proposals statistics using the departments from session
@@ -89,6 +90,7 @@ export default function ReviewerDashboardContent({ onNavigate }) {
                 name: userData.name || 'Reviewer',
                 role: 'Reviewer', // Standardized to capital R
                 departments: departments,
+                level: userData.level,
             };
 
             sessionStorage.setItem('auth', JSON.stringify(authData));
@@ -122,21 +124,29 @@ export default function ReviewerDashboardContent({ onNavigate }) {
 
             if (!departments || departments.length === 0) {
                 console.warn('No departments assigned to reviewer');
-                setStatistics((prev) => ({
-                    ...prev,
+                setStatistics({
                     pending: 0,
                     approved: 0,
                     rejected: 0,
                     departments,
-                }));
+                });
                 return;
             }
 
-            // const proposals = await getReviewerProposals(departments);
-            const res = await apiRequest(`/api/reviewer/${reviewerId}/proposals`, {
-                method: 'GET',
-            });
-            const proposals = res.proposals;
+            let proposals = [];
+            if (reviewer?.level === 2) {
+                const res = await apiRequest('/api/proposal/dept', {
+                    method: 'POST',
+                    body: JSON.stringify({ departments }),
+                });
+                proposals = res.proposals;
+            } else {
+                const res = await apiRequest(`/api/reviewer/${reviewerId}/proposals`, {
+                    method: 'GET',
+                });
+                proposals = res.proposals;
+            }
+
             setStatistics({
                 pending: proposals.filter((p) => p.status?.toLowerCase() === 'pending' || !p.status)
                     .length,

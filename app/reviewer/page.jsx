@@ -63,7 +63,7 @@ export default function ReviewerPage() {
                     role: 'Reviewer', // Standardized role name
                     departments: userDepartments,
                     email: firestoreData.email || user.email || '',
-                    level: user.level,
+                    level: firestoreData.level,
                 };
 
                 // Update session storage
@@ -73,6 +73,7 @@ export default function ReviewerPage() {
                 sessionStorage.setItem('name', authData.name);
                 sessionStorage.setItem('departments', JSON.stringify(userDepartments));
                 sessionStorage.setItem('email', authData.email);
+                sessionStorage.setItem('level', authData.level);
 
                 setIsAuthenticated(true);
                 setUserData(authData);
@@ -88,6 +89,7 @@ export default function ReviewerPage() {
                 sessionStorage.removeItem('name');
                 sessionStorage.removeItem('departments');
                 sessionStorage.removeItem('email');
+                sessionStorage.removeItem('level');
 
                 // Don't redirect immediately - let the error UI show
             } finally {

@@ -6,14 +6,14 @@ export async function POST(req) {
     try {
         let { departments } = await req.json();
 
-        if (!departments || departments.length == 0) {
+        if (!departments || departments.length === 0) {
             return NextResponse.json(
                 { success: false, message: 'Departments not provided' },
                 { status: 400 }
             );
         }
 
-        // Normalize departments to an array
+        // Normalize departments
         if (!Array.isArray(departments)) {
             if (typeof departments === 'object') {
                 departments = Object.values(departments);
@@ -28,7 +28,7 @@ export async function POST(req) {
         const proposals = [];
         proposalsSnap.forEach((doc) => {
             const data = doc.data();
-            if (departments.includes(data.department)) {
+            if (departments.includes(data.department) && data?.currentReviewer?.level === 2) {
                 proposals.push({ id: doc.id, ...data });
             }
         });
