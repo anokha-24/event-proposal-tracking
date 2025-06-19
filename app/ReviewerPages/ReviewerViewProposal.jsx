@@ -165,9 +165,14 @@ export default function ReviewerProposalViewContent({ onBack, filterStatus = 'al
                     try {
                         let finalProposals = null;
                         if (reviewerData.level == 2) {
-                            const fetchedProposals = await getReviewerProposals(departments);
-                            setProposals(fetchedProposals);
-                            finalProposals = fetchedProposals;
+                            const allDeptProposals = await getReviewerProposals(departments);
+
+                            const filteredLevel2Proposals = allDeptProposals.filter(
+                                (proposal) => proposal.currentReviewer?.level === 2
+                            );
+
+                            setProposals(filteredLevel2Proposals);
+                            finalProposals = filteredLevel2Proposals;
                         } else {
                             const res = await apiRequest(`/api/reviewer/${user.uid}/proposals`, {
                                 method: 'GET',
@@ -259,9 +264,14 @@ export default function ReviewerProposalViewContent({ onBack, filterStatus = 'al
                 try {
                     let finalProposals;
                     if (reviewerData.level == 2) {
-                        const fetchedProposals = await getReviewerProposals(userDepartments);
-                        setProposals(fetchedProposals);
-                        finalProposals = fetchedProposals;
+                        const allDeptProposals = await getReviewerProposals(userDepartments);
+
+                        const filteredLevel2Proposals = allDeptProposals.filter(
+                            (proposal) => proposal.currentReviewer?.level === 2
+                        );
+
+                        setProposals(filteredLevel2Proposals);
+                        finalProposals = filteredLevel2Proposals;
                     } else {
                         const res = await apiRequest(`/api/reviewer/${user.uid}/proposals`, {
                             method: 'GET',
@@ -438,7 +448,7 @@ export default function ReviewerProposalViewContent({ onBack, filterStatus = 'al
     };
 
     const handleSubmitReview = async (proposalId) => {
-        if (!reviewComment.trim() || (reviewStatus === 'Approve' && !selectedReviewer)) {
+        if (!reviewComment.trim() || (reviewStatus === 'Approved' && !selectedReviewer)) {
             alert('Please provide a review comment or select next reviewer before submitting.');
             return;
         }
@@ -1493,8 +1503,8 @@ export default function ReviewerProposalViewContent({ onBack, filterStatus = 'al
                                                             disabled={
                                                                 isSubmitting ||
                                                                 !reviewComment.trim() ||
-                                                                (!selectedReviewer &&
-                                                                    reviewer.level == 1)
+                                                                (reviewer?.level === 1 &&
+                                                                    !selectedReviewer)
                                                             }
                                                             className='w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded-md py-2 flex items-center justify-center gap-2 transition whitespace-nowrap'
                                                         >

@@ -166,7 +166,18 @@ export default function ViewProposalsContent({ onEditProposal, onTrackProposal }
 
 // Function to format date
 function formatDate(timestamp) {
-    return timestamp?.toDate?.()?.toLocaleString() || new Date(timestamp).toLocaleString() || 'N/A';
+    if (!timestamp) return 'N/A';
+    if (typeof timestamp.toDate === 'function') {
+        return timestamp.toDate().toLocaleString();
+    }
+    if (timestamp.seconds !== undefined && timestamp.nanoseconds !== undefined) {
+        return new Date(timestamp.seconds * 1000).toLocaleString();
+    }
+    try {
+        return new Date(timestamp).toLocaleString();
+    } catch {
+        return 'N/A';
+    }
 }
 
 // Function to get status color

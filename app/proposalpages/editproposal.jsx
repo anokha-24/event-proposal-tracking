@@ -314,7 +314,7 @@ export default function EditProposalContent({ proposalId, onBack }) {
             // Redirect back after delay
             setTimeout(() => {
                 if (onBack) onBack();
-            }, 2000);
+            }, 500);
         } catch (err) {
             console.error('Error updating proposal:', err);
             setError('Failed to update proposal: ' + err.message);

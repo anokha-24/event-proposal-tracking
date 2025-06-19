@@ -210,6 +210,7 @@ export default function AddProposalContent() {
 
             setSuccess('Proposal submitted successfully!');
             form.reset();
+            router.refresh();
         } catch (error) {
             console.error('Error submitting proposal:', error);
             setError('Failed to submit proposal. Please try again.');
