@@ -3,11 +3,11 @@
 import { useState, useEffect } from "react";
 import { FileText, FilePlus, Menu, X, LogOut } from "lucide-react";
 import { useRouter } from "next/navigation";
-import DashboardContent from "../_components/proposalpages/dashboard";
-import ViewProposalsContent from "../_components/proposalpages/viewproposals";
-import AddProposalContent from "../_components/proposalpages/addproposal";
-import ProposalTrackingContent from "../_components/proposalpages/proposaltracking";
-import EditProposalContent from "../_components/proposalpages/editproposal";
+import DashboardContent from "../_components/proposalpages/Dashboard";
+import ViewProposalsContent from "../_components/proposalpages/ViewProposal";
+import AddProposalContent from "../_components/proposalpages/AddProposal";
+import ProposalTrackingContent from "../_components/proposalpages/ProposalTracking";
+import EditProposalContent from "../_components/proposalpages/EditProposal";
 import { auth, db } from "@/app/firebase/firebase";
 import { onAuthStateChanged } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
