@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { auth, db } from "../../firebase/firebase";
-import { getReviewerProposals } from "../api/reviewerService";
+import { getReviewerProposals } from "../../api/reviewerService";
 import { onAuthStateChanged } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 import {

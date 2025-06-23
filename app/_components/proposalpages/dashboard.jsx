@@ -3,9 +3,10 @@
 import { useState, useEffect } from "react";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import {
-	getPendingProposalsByUser,
-	getReviewedProposalsByUser,
-} from "../api/proposalService";
+	getProposals,
+	getProposalsByStatus,
+	deleteProposal,
+} from "../../api/proposalService";
 
 export default function DashboardContent({ onNavigate }) {
 	const [pendingCount, setPendingCount] = useState(0);

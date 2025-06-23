@@ -3,9 +3,6 @@
 import { useState, useEffect } from "react";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import {
-	doc,
-	getDoc,
-	updateDoc,
 	collection,
 	addDoc,
 	query,
@@ -13,10 +10,10 @@ import {
 	serverTimestamp,
 	orderBy,
 } from "firebase/firestore";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, } from "lucide-react";
 import { db } from "../../firebase/firebase";
 import { useRouter } from "next/navigation";
-import { getProposalById, updateProposal } from "../api/proposalService";
+import { getProposalById } from "../../api/proposalService";
 
 export default function EditProposalContent({ proposalId, onBack }) {
 	const router = useRouter();

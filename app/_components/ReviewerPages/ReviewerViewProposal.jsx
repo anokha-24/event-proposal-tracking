@@ -36,7 +36,7 @@ import {
 import {
 	getReviewerProposals,
 	updateProposalStatusReviewer,
-} from "../api/reviewerService";
+} from "../../api/reviewerService";
 import apiRequest from "@/utils/apiRequest";
 import { ComboboxReviewer } from "@/components/ui/combo-box-reviewer";
 import ApprovedProposalsCard from "./ApprovedProposalCard";
