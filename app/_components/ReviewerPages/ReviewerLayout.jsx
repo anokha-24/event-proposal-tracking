@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import ReviewerDashboardContent from "./reviewerdashboard";
-import ReviewerProposalViewContent from "./reviewerviewproposal";
+import ReviewerDashboardContent from "@/app/_components/ReviewerPages/ReviewerDashboard";
+import ReviewerProposalViewContent from "@/app/_components/ReviewerPages/ReviewerViewProposal";
 
 export default function ReviewerLayout() {
 	const [currentView, setCurrentView] = useState("dashboard");

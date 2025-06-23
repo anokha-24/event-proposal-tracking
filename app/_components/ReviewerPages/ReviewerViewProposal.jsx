@@ -1,6 +1,6 @@
 "use client";
 import { query, orderBy } from "firebase/firestore";
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, } from "react";
 import { useRouter } from "next/navigation";
 import { auth, db } from "@/app/firebase/firebase";
 import { onAuthStateChanged } from "firebase/auth";
