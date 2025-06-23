@@ -88,40 +88,6 @@ export default function ReviewerProposalViewContent({ onBack, filterStatus = 'al
         }
     }, [filterStatus]);
 
-    const handleRefresh = () => {
-        setRefreshing(true);
-        setTimeout(() => {
-            window.location.reload(); // Refresh the page
-        }, 1000); // Optional: 1 second delay for UX
-    };
-
-    const [refreshing, setRefreshing] = useState(false);
-
-    const directQueryProposals = async (departments) => {
-        try {
-            const proposalsRef = collection(db, 'Proposals');
-            const snapshot = await getDocs(proposalsRef);
-
-            const allProposals = [];
-            snapshot.forEach((doc) => {
-                const data = doc.data();
-                allProposals.push({
-                    id: doc.id,
-                    ...data,
-                });
-            });
-
-            const matchingProposals = allProposals.filter((proposal) => {
-                return departments.includes(proposal.department);
-            });
-
-            return matchingProposals;
-        } catch (error) {
-            console.error('Error in direct query:', error);
-            throw error;
-        }
-    };
-
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, async (user) => {
             if (!user) {
@@ -157,7 +123,7 @@ export default function ReviewerProposalViewContent({ onBack, filterStatus = 'al
                         displayName: name || 'Reviewer',
                         name: name || 'Reviewer',
                         departments: departments || [],
-                        level: level,
+                        level: level ? parseInt(level, 10) : undefined,
                     };
 
                     setReviewer(reviewerData);
@@ -315,7 +281,11 @@ export default function ReviewerProposalViewContent({ onBack, filterStatus = 'al
 
     useEffect(() => {
         const fetchReviewerData = async () => {
-            if (!reviewer?.uid || !reviewer?.level) return;
+            if (!reviewer?.uid || reviewer.level === undefined || reviewer.level === null) {
+                return;
+            }
+
+            console.log('Reviewer level: ', reviewer.level);
             try {
                 const nextLevel = parseInt(reviewer.level) + 1;
                 console.log('Next level: ', nextLevel);
@@ -340,9 +310,20 @@ export default function ReviewerProposalViewContent({ onBack, filterStatus = 'al
                 console.error('Error loading reviewer data:', err);
             }
         };
-        console.log('REVIEWER', reviewer);
-        if (reviewer) fetchReviewerData();
+        if (reviewer) {
+            console.log('REVIEWER', reviewer);
+            fetchReviewerData();
+        }
     }, [reviewer]);
+
+    const handleRefresh = () => {
+        setRefreshing(true);
+        setTimeout(() => {
+            window.location.reload(); // Refresh the page
+        }, 1000); // Optional: 1 second delay for UX
+    };
+
+    const [refreshing, setRefreshing] = useState(false);
 
     const fetchProposalHistory = async (proposalId) => {
         try {
@@ -448,7 +429,11 @@ export default function ReviewerProposalViewContent({ onBack, filterStatus = 'al
     };
 
     const handleSubmitReview = async (proposalId) => {
-        if (!reviewComment.trim() || (reviewStatus === 'Approved' && !selectedReviewer)) {
+        console.log('Reviewer: ', reviewer);
+        if (
+            !reviewComment.trim() ||
+            (reviewStatus === 'Approved' && reviewer.level < 1 && !selectedReviewer)
+        ) {
             alert('Please provide a review comment or select next reviewer before submitting.');
             return;
         }
@@ -474,6 +459,12 @@ export default function ReviewerProposalViewContent({ onBack, filterStatus = 'al
                     body: JSON.stringify({
                         decision: 'approved',
                         comments: reviewComment,
+                        currentReviewer: {
+                            reviewerId: reviewer.uid,
+                            name: reviewer.name,
+                            email: reviewer.email,
+                            level: reviewer.level,
+                        },
                         nextReviewer: {
                             reviewerId: fullReviewer.id,
                             name: fullReviewer.name,
@@ -524,7 +515,7 @@ export default function ReviewerProposalViewContent({ onBack, filterStatus = 'al
                     pending: (prev.pending || 0) + 1,
                     approved: prev.approved, // not approved fully yet, just forwarded
                 }));
-            } else if (reviewStatus === 'Approved' && reviewer.level != 1) {
+            } else if (reviewStatus === 'Approved') {
                 // Case: Level 2 or 3 reviewer approving without selecting next reviewer
                 // Forward to next level with empty reviewer details
                 const nextLevel = parseInt(reviewer.level) + 1;
@@ -535,6 +526,12 @@ export default function ReviewerProposalViewContent({ onBack, filterStatus = 'al
                     body: JSON.stringify({
                         decision: 'approved',
                         comments: reviewComment,
+                        currentReviewer: {
+                            reviewerId: reviewer.uid,
+                            name: reviewer.name,
+                            email: reviewer.email,
+                            level: reviewer.level,
+                        },
                         nextReviewer: {
                             reviewerId: '',
                             name: '',
@@ -1452,7 +1449,7 @@ export default function ReviewerProposalViewContent({ onBack, filterStatus = 'al
                                                     </div>
 
                                                     {reviewStatus == 'Approved' &&
-                                                        reviewer.level == 0 && (
+                                                        reviewer.level < 1 && (
                                                             <div className='p-6 bg-gray-800 rounded-lg shadow-md'>
                                                                 <label className='block text-xs font-medium text-gray-400 mb-1'>
                                                                     Select next reviewer
@@ -1503,7 +1500,8 @@ export default function ReviewerProposalViewContent({ onBack, filterStatus = 'al
                                                             disabled={
                                                                 isSubmitting ||
                                                                 !reviewComment.trim() ||
-                                                                (reviewer?.level === 1 &&
+                                                                (reviewStatus === 'Approved' &&
+                                                                    reviewer?.level < 1 &&
                                                                     !selectedReviewer)
                                                             }
                                                             className='w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded-md py-2 flex items-center justify-center gap-2 transition whitespace-nowrap'

@@ -92,11 +92,12 @@ export async function GET(_, { params }) {
  */
 export async function PUT(req, { params }) {
     try {
-        const proposalId = await params.id;
+        const { id } = await params;
+        const proposalId = id;
         const proposalData = await req.json();
 
         // Remove id before updating
-        const { id, ...dataToUpdate } = proposalData;
+        const { id: _, ...dataToUpdate } = proposalData;
 
         const proposalRef = doc(db, 'Proposals', proposalId);
         const currentProposalSnap = await getDoc(proposalRef);

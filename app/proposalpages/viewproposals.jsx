@@ -126,18 +126,20 @@ export default function ViewProposalsContent({ onEditProposal, onTrackProposal }
                                     </div>
                                 </div>
 
-                                {typeof proposal?.currentReviewer?.level === 'number' && (
-                                    <div className='mb-2 w-fit items-center gap-2 text-xs font-medium text-indigo-400 bg-gray-700 px-3 py-1 rounded-full border border-gray-600'>
-                                        <span className='w-1.5 h-1.5 bg-indigo-400 rounded-full'></span>
-                                        Currently under review by{' '}
-                                        <span className='font-semibold'>
-                                            {getReviewerRoleWithName(
-                                                proposal.currentReviewer.level,
-                                                proposal.currentReviewer.name
-                                            )}
-                                        </span>
-                                    </div>
-                                )}
+                                {(!proposal.status ||
+                                    proposal.status?.toLowerCase() === 'pending') &&
+                                    typeof proposal?.currentReviewer?.level === 'number' && (
+                                        <div className='mb-2 w-fit items-center gap-2 text-xs font-medium text-indigo-400 bg-gray-700 px-3 py-1 rounded-full border border-gray-600'>
+                                            <span className='w-1.5 h-1.5 bg-indigo-400 rounded-full'></span>
+                                            Currently under review by{' '}
+                                            <span className='font-semibold'>
+                                                {getReviewerRoleWithName(
+                                                    proposal.currentReviewer.level,
+                                                    proposal.currentReviewer.name
+                                                )}
+                                            </span>
+                                        </div>
+                                    )}
 
                                 <div className='bg-gray-700 py-1 px-3 rounded-full text-sm inline-block mb-4 w-fit'>
                                     Status:{' '}

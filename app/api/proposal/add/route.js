@@ -19,6 +19,7 @@ export async function POST(req) {
 
         const enrichedProposal = {
             ...dataToStore,
+            version: 1,
             currentReviewer, // level of reviewer can be inferred from currentReviewer information
             reviewerHistory: [],
             comments: [],

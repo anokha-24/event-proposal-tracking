@@ -63,7 +63,13 @@ export const forwardProposalSchema = z.object({
     nextReviewer: z.object({
         reviewerId: z.string(),
         name: z.string(),
-        email: z.string(),
+        email: z.string().email().or(z.literal('')),
+        level: z.number(),
+    }),
+    currentReviewer: z.object({
+        reviewerId: z.string(),
+        name: z.string(),
+        email: z.string().email(),
         level: z.number(),
     }),
 });

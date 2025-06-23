@@ -5,9 +5,10 @@ import { db } from '@/app/firebase/firebase';
 /**
  * Get proposals by user ID
  */
-export async function GET(_, { params }) {
+export async function GET(request, { params }) {
     try {
-        const userId = params.id;
+        const { id } = await params;
+        const userId = id;
         if (!userId) {
             return NextResponse.json(
                 { success: false, message: 'User ID required' },

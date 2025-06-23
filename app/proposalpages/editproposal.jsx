@@ -236,7 +236,9 @@ export default function EditProposalContent({ proposalId, onBack }) {
                     currentproposalThread.status === 'Reviewed');
 
             // Determine if we're creating a new version (only when status is "reviewed")
-            const isCreatingNewVersion = currentproposalThread.status?.toLowerCase() === 'reviewed';
+            const isCreatingNewVersion =
+                currentproposalThread.status?.toLowerCase() === 'reviewed' ||
+                currentproposalThread.status?.toLowerCase() === 'pending';
 
             let newVersion = currentproposalThread.version || 1;
 

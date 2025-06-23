@@ -15,7 +15,7 @@ export async function POST(req, { params }) {
         if (!parseResult.success) {
             return NextResponse.json({ error: parseResult.error.flatten() }, { status: 400 });
         }
-        const { decision, comments, nextReviewer } = parseResult.data;
+        const { decision, comments, nextReviewer, currentReviewer } = parseResult.data;
 
         if (!proposalId || !decision || !nextReviewer) {
             return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
@@ -36,9 +36,9 @@ export async function POST(req, { params }) {
         }
 
         const proposalData = proposalSnap.data();
-        const currentReviewer = proposalData.currentReviewer;
+        const prevReviewer = proposalData.currentReviewer;
 
-        console.log('CC', currentReviewer);
+        console.log('CC', prevReviewer);
 
         const { reviewerId, name, email } = currentReviewer || {};
         if (!reviewerId || !name || !email) {
@@ -57,7 +57,7 @@ export async function POST(req, { params }) {
             reviewerId,
             name,
             email,
-            level: currentReviewer.level || nextReviewer.level - 1,
+            level: currentReviewer.level,
             decision,
             comments: comments,
             reviewedAt: new Date(),
@@ -69,7 +69,7 @@ export async function POST(req, { params }) {
             reviewerHistory: arrayUnion(historyEntry),
             currentReviewer: { ...nextReviewer },
             updatedAt: serverTimestamp(),
-            ...(nextReviewer.level === 3 && decision == 'approved' && { status: 'Approved' }),
+            ...(nextReviewer.level >= 3 && decision == 'approved' && { status: 'approved' }),
         });
 
         return NextResponse.json({ success: true });
