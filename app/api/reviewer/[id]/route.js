@@ -4,17 +4,17 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(_, { params }) {
 	try {
-		const userRef = doc(db, "Auth", await params.id);
-		const userSnap = await getDoc(userRef);
+		const { id: reviewerId } = params;
+		const docSnap = await getDoc(doc(db, "Auth", reviewerId));
 
-		if (!userSnap.exists()) {
+		if (!docSnap.exists()) {
 			return NextResponse.json(
 				{ success: false, message: "Reviewer not found" },
 				{ status: 404 },
 			);
 		}
 
-		const userData = userSnap.data();
+		const userData = docSnap.data();
 		const normalizedDepartment =
 			userData.role === "Reviewer"
 				? Array.isArray(userData.department)

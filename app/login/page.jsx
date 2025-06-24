@@ -40,7 +40,7 @@ const SignIn = () => {
 				});
 
 				if (data !== null) {
-					const userData = data;
+					const userData = data.user;
 
 					// Get role and normalize to lowercase for case-insensitive comparison
 					const userRole = userData.role || "";

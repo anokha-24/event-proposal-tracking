@@ -15,12 +15,9 @@ import {
 	ChevronUp,
 	ArrowLeft,
 	History,
-	ChevronRight,
 	MessageSquare,
-	User,
 	Target,
 	Layers,
-	Settings,
 	Send,
 } from "lucide-react";
 import {
@@ -763,7 +760,9 @@ export default function ProposalTrackingContent({ proposalId, onBack }) {
 																			: "text-blue-400"
 																	}`}
 																>
-																	{isCurrentUser ? "You" : "Reviewer"}
+																	{isCurrentUser
+																		? "You"
+																		: item.reviewerName ?? "Reviewer"}
 																</span>
 																<span className="text-xs text-gray-400 whitespace-nowrap">
 																	{formatTimestamp(item.timestamp)}

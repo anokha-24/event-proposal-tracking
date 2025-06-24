@@ -61,6 +61,7 @@ export default function AddProposalContent() {
 	const [error, setError] = useState("");
 	const [success, setSuccess] = useState("");
 	const [isAuthenticated, setIsAuthenticated] = useState(false);
+	const [authLoading, setAuthLoading] = useState(true);
 	const [user, setUser] = useState(null);
 	const [reviewers, setReviewers] = useState([]);
 	const [selectedReviewer, setSelectedReviewer] = useState(null);
@@ -68,47 +69,39 @@ export default function AddProposalContent() {
 
 	useEffect(() => {
 		const unsubscribe = auth.onAuthStateChanged(async (user) => {
+			setAuthLoading(true);
 			if (user) {
+				setIsAuthenticated(true);
 				try {
-					const userData = await apiRequest(`/api/user/${user.uid}`, {
-						method: "GET",
-					});
-					if (userData) {
-						setUser({
-							...user,
-							department: userData.department || "",
-						});
-					} else {
-						setUser(user);
+					const { user: userData } = await apiRequest(
+						`/api/user/${user.uid}`,
+						{
+							method: "GET",
+						},
+					);
+					const department = userData?.department;
+					const fullUser = { ...user, department: department || "" };
+					setUser(fullUser);
+
+					if (department) {
+						const reviewersData = await apiRequest(
+							`/api/reviewer?level=0&department=${department}`,
+						);
+						setReviewers(reviewersData);
 					}
-					setIsAuthenticated(true);
 				} catch (err) {
 					console.error("Error fetching user data:", err);
-					setUser(user);
-					setIsAuthenticated(true);
+					setUser(user); // Set user without department if fetching extra data fails
 				}
 			} else {
 				setIsAuthenticated(false);
 				setUser(null);
 				setError("You must be logged in to submit a proposal");
 			}
+			setAuthLoading(false);
 		});
 		return () => unsubscribe();
 	}, []);
-
-	useEffect(() => {
-		const fetchAvailableReviewers = async () => {
-			const data = await apiRequest(
-				`/api/reviewer?level=0&department=${user.department}`,
-			);
-			console.log(data);
-			setReviewers(data);
-		};
-		if (user && user.department) {
-			console.log("User: ", user);
-			fetchAvailableReviewers();
-		}
-	}, [user]);
 
 	const scrollToTop = () => {
 		setTimeout(() => {
@@ -165,10 +158,13 @@ export default function AddProposalContent() {
 				setIsSubmitting(false);
 				return;
 			}
-
-			const userData = await apiRequest(`/api/user/${user.uid}`, {
-				method: "GET",
-			});
+			
+			const { user: userData } = await apiRequest(
+				`/api/user/${user.uid}`,
+				{
+					method: "GET",
+				},
+			);
 
 			const currentReviewerObj = reviewers.find(
 				(r) => r.id === selectedReviewer,
@@ -216,7 +212,7 @@ export default function AddProposalContent() {
 
 			setSuccess("Proposal submitted successfully!");
 			form.reset();
-			router.refresh();
+			router.push("/user/proposals");
 		} catch (error) {
 			console.error("Error submitting proposal:", error);
 			setError("Failed to submit proposal. Please try again.");
@@ -244,7 +240,11 @@ export default function AddProposalContent() {
 				</Alert>
 			)}
 
-			{!isAuthenticated ? (
+			{authLoading ? (
+				<div className="p-6 bg-gray-800 rounded-lg shadow-md flex justify-center items-center h-96">
+					<Loader2 className="h-12 w-12 animate-spin text-blue-400" />
+				</div>
+			) : !isAuthenticated ? (
 				<div className="p-6 bg-gray-800 rounded-lg shadow-md">
 					<p className="text-white text-center">
 						Please log in to submit a proposal.

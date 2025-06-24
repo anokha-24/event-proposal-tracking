@@ -4,7 +4,7 @@ import { db } from "@/app/firebase/firebase";
 
 export async function GET(_, { params }) {
 	try {
-		const userId = await params.id;
+		const { id: userId } = await params;
 		if (!userId) {
 			return NextResponse.json(
 				{ success: false, message: "User ID required" },

@@ -16,7 +16,7 @@ import { db } from "@/app/firebase/firebase";
  * Update proposal status and manage history entries
  */
 export async function PUT(req, { params }) {
-	const proposalId = await params.id;
+	const { id: proposalId } = await params;
 	const { newStatus, remarks, userId } = await req.json();
 
 	try {
@@ -33,6 +33,8 @@ export async function PUT(req, { params }) {
 		const proposalData = proposalSnap.data();
 		let newVersion = proposalData.version || 1;
 
+		// Check if the new status is different from the current status, if so,
+		// Add the proposal to history and clear the comments and replies.
 		if (
 			newStatus.toLowerCase() === "reviewed" &&
 			proposalData.status?.toLowerCase() !== "reviewed"
@@ -42,7 +44,7 @@ export async function PUT(req, { params }) {
 			const currentComments = proposalData.comments || [];
 			const currentReplies = proposalData.replies || [];
 
-			if (currentComments.length || currentReplies.length) {
+			if (currentComments.length > 0 || currentReplies.length > 0) {
 				await addDoc(collection(db, "Proposals", proposalId, "History"), {
 					version: proposalData.version || 1,
 					comments: currentComments,
@@ -58,10 +60,20 @@ export async function PUT(req, { params }) {
 			});
 		}
 
+		// Update the proposal status and version.
 		await updateDoc(proposalRef, {
 			status: newStatus,
 			updatedAt: serverTimestamp(),
 			version: newVersion,
+			comments: [
+				...(proposalData.comments || []),
+				{
+					text: remarks || `Status updated to ${newStatus}`,
+					reviewerName: proposalData.currentReviewer.email,
+					timestamp: new Date().toISOString(),
+					status: newStatus,
+				},
+			],
 		});
 
 		if (newStatus.toLowerCase() !== "reviewed") {

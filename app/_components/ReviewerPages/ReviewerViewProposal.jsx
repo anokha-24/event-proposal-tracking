@@ -1,6 +1,6 @@
 "use client";
 import { query, orderBy } from "firebase/firestore";
-import { useState, useEffect, useRef, } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { auth, db } from "@/app/firebase/firebase";
 import { onAuthStateChanged } from "firebase/auth";
@@ -9,7 +9,6 @@ import {
 	doc,
 	getDoc,
 	getDocs,
-	updateDoc,
 } from "firebase/firestore";
 import {
 	RefreshCw,
@@ -33,76 +32,51 @@ import {
 	IndianRupee,
 	Users2,
 } from "lucide-react";
-import {
-	getReviewerProposals,
-	updateProposalStatusReviewer,
-} from "../../api/reviewerService";
 import apiRequest from "@/utils/apiRequest";
 import { ComboboxReviewer } from "@/components/ui/combo-box-reviewer";
-import ApprovedProposalsCard from "./ApprovedProposalCard";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 
 export default function ReviewerProposalViewContent({
 	onBack,
-	filterStatus = "all",
+	proposalId,
 }) {
 	const [proposals, setProposals] = useState([]);
 	const [loading, setLoading] = useState(true);
 	const [reviewer, setReviewer] = useState(null);
 	const [error, setError] = useState(null);
-	const [filter, setFilter] = useState(filterStatus);
 	const [expandedProposal, setExpandedProposal] = useState(null);
 	const [reviewComment, setReviewComment] = useState("");
-	const [reviewStatus, setReviewStatus] = useState("Approved");
+	const [reviewStatus, setReviewStatus] = useState("Reviewed");
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [successMessage, setSuccessMessage] = useState("");
 	const [nextReviewers, setNextReviewers] = useState([]);
 	const [filteredReviewers, setFilteredReviewers] = useState([]);
 	const [selectedReviewer, setSelectedReviewer] = useState(null);
-	const [approvedProposals, setApprovedProposals] = useState([]);
-	const [statistics, setStatistics] = useState({
-		total: 0,
-		pending: 0,
-		approved: 0,
-		rejected: 0,
-		changes: 0,
-	});
 
 	const commentInputRef = useRef(null);
 	const router = useRouter();
 
-	const handleLogout = () => {
-		router.push("/");
-	};
-
 	useEffect(() => {
-		const selectedProposalObj = proposals.find(
-			(proposal) => proposal.id === expandedProposal,
-		);
-		const selectedDept = selectedProposalObj?.department;
+		if (proposals.length === 1 && proposals[0].id === expandedProposal) {
+			const selectedProposalObj = proposals[0];
+			const selectedDept = selectedProposalObj?.department;
 
-		if (!selectedDept) {
-			setFilteredReviewers([]);
-			return;
+			if (!selectedDept) {
+				setFilteredReviewers([]);
+				return;
+			}
+
+			const filtered = nextReviewers.filter((reviewer) => {
+				const dept = reviewer.department;
+				return typeof dept === "string"
+					? dept === selectedDept
+					: Array.isArray(dept) && dept.includes(selectedDept);
+			});
+
+			setFilteredReviewers(filtered);
 		}
-
-		const filtered = nextReviewers.filter((reviewer) => {
-			const dept = reviewer.department;
-			return typeof dept === "string"
-				? dept === selectedDept
-				: Array.isArray(dept) && dept.includes(selectedDept);
-		});
-
-		setFilteredReviewers(filtered);
 	}, [expandedProposal, proposals, nextReviewers]);
-
-	// Set filter when filterStatus prop changes
-	useEffect(() => {
-		if (filterStatus) {
-			setFilter(filterStatus);
-		}
-	}, [filterStatus]);
 
 	useEffect(() => {
 		const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -112,7 +86,32 @@ export default function ReviewerProposalViewContent({
 				return;
 			}
 
+			setLoading(true);
 			try {
+				const fetchProposalData = async (reviewerData) => {
+					if (!proposalId) {
+						setError("No proposal ID specified.");
+						setProposals([]);
+						return;
+					}
+
+					try {
+						const res = await apiRequest(`/api/proposal/${proposalId}`, "GET");
+						const proposal = res.proposal;
+
+						if (proposal) {
+							setProposals([proposal]);
+							setExpandedProposal(proposal.id); // Auto-expand the single proposal
+						} else {
+							setError(`Proposal with ID ${proposalId} not found.`);
+							setProposals([]);
+						}
+					} catch (queryErr) {
+						console.error("Error fetching proposal:", queryErr);
+						setError("Failed to fetch proposal: " + queryErr.message);
+					}
+				};
+
 				// First check session storage for values from the login page
 				const sessionAuth = sessionStorage.getItem("auth");
 				const isUser = sessionStorage.getItem("user");
@@ -141,51 +140,8 @@ export default function ReviewerProposalViewContent({
 						departments: departments || [],
 						level: level ? parseInt(level, 10) : undefined,
 					};
-
 					setReviewer(reviewerData);
-
-					try {
-						let finalProposals = null;
-						if (reviewerData.level == 2) {
-							const allDeptProposals = await getReviewerProposals(departments);
-
-							const filteredLevel2Proposals = allDeptProposals.filter(
-								(proposal) => proposal.currentReviewer?.level === 2,
-							);
-
-							setProposals(filteredLevel2Proposals);
-							finalProposals = filteredLevel2Proposals;
-						} else {
-							const res = await apiRequest(
-								`/api/reviewer/${user.uid}/proposals`,
-								{
-									method: "GET",
-								},
-							);
-							const fetchedProposals = res.proposals;
-							setProposals(fetchedProposals);
-							finalProposals = fetchedProposals;
-						}
-						setStatistics({
-							total: finalProposals.length,
-							pending: finalProposals.filter(
-								(p) => p.status?.toLowerCase() === "pending" || !p.status,
-							).length,
-							approved: finalProposals.filter(
-								(p) => p.status?.toLowerCase() === "approved",
-							).length,
-							rejected: finalProposals.filter(
-								(p) => p.status?.toLowerCase() === "rejected",
-							).length,
-							changes: finalProposals.filter(
-								(p) => p.status?.toLowerCase() === "reviewed",
-							).length,
-						});
-					} catch (queryErr) {
-						console.error("Error fetching proposals:", queryErr);
-						setError("Failed to fetch proposals: " + queryErr.message);
-					}
-
+					await fetchProposalData(reviewerData);
 					setLoading(false);
 					return;
 				}
@@ -194,8 +150,6 @@ export default function ReviewerProposalViewContent({
 				const reviewerRef = doc(db, "Reviewers", user.uid);
 				const reviewerDoc = await getDoc(reviewerRef);
 
-				console.log(reviewerRef, reviewerDoc);
-
 				if (!reviewerDoc.exists()) {
 					throw new Error(
 						"You don't have reviewer privileges. Please contact the administrator.",
@@ -203,7 +157,6 @@ export default function ReviewerProposalViewContent({
 				}
 
 				const reviewerData = reviewerDoc.data();
-				console.log("Reviewer Data: ", reviewerData);
 
 				// Process departments properly
 				let userDepartments = reviewerData.department || [];
@@ -238,7 +191,7 @@ export default function ReviewerProposalViewContent({
 				sessionStorage.setItem("level", reviewerData.level);
 
 				// Set reviewer data
-				setReviewer({
+				const fullReviewerData = {
 					uid: user.uid,
 					email: user.email,
 					displayName: reviewerData.name || "Reviewer",
@@ -246,51 +199,10 @@ export default function ReviewerProposalViewContent({
 					departments: userDepartments,
 					level: reviewerData.level,
 					...reviewerData,
-				});
+				};
 
-				try {
-					let finalProposals;
-					if (reviewerData.level == 2) {
-						const allDeptProposals =
-							await getReviewerProposals(userDepartments);
-
-						const filteredLevel2Proposals = allDeptProposals.filter(
-							(proposal) => proposal.currentReviewer?.level === 2,
-						);
-
-						setProposals(filteredLevel2Proposals);
-						finalProposals = filteredLevel2Proposals;
-					} else {
-						const res = await apiRequest(
-							`/api/reviewer/${user.uid}/proposals`,
-							{
-								method: "GET",
-							},
-						);
-						const fetchedProposals = res.proposals;
-						setProposals(fetchedProposals);
-						finalProposals = fetchedProposals;
-					}
-
-					setStatistics({
-						total: finalProposals.length,
-						pending: finalProposals.filter(
-							(p) => p.status?.toLowerCase() === "pending" || !p.status,
-						).length,
-						approved: finalProposals.filter(
-							(p) => p.status?.toLowerCase() === "approved",
-						).length,
-						rejected: finalProposals.filter(
-							(p) => p.status?.toLowerCase() === "rejected",
-						).length,
-						changes: finalProposals.filter(
-							(p) => p.status?.toLowerCase() === "reviewed",
-						).length,
-					});
-				} catch (queryErr) {
-					console.error("Error fetching proposals:", queryErr);
-					setError("Failed to fetch proposals: " + queryErr.message);
-				}
+				setReviewer(fullReviewerData);
+				await fetchProposalData(fullReviewerData);
 			} catch (err) {
 				console.error("Authentication error:", err);
 				sessionStorage.removeItem("auth");
@@ -302,7 +214,7 @@ export default function ReviewerProposalViewContent({
 		});
 
 		return () => unsubscribe();
-	}, [router]);
+	}, [router, proposalId]);
 
 	useEffect(() => {
 		const fetchReviewerData = async () => {
@@ -314,92 +226,21 @@ export default function ReviewerProposalViewContent({
 				return;
 			}
 
-			console.log("Reviewer level: ", reviewer.level);
 			try {
 				const nextLevel = parseInt(reviewer.level) + 1;
-				console.log("Next level: ", nextLevel);
 				const reviewersRes = await apiRequest(
 					`/api/reviewer?level=${nextLevel}`,
 				);
 				setNextReviewers(reviewersRes);
-
-				const approvedProposalsRes = await apiRequest(
-					`/api/reviewer/${reviewer.uid}/history`,
-				);
-				const reviewedProposalsWithMeta = approvedProposalsRes.proposals.map(
-					(p) => ({
-						...p,
-						isReviewedHistory: true,
-					}),
-				);
-				if (reviewer.level != 2)
-					setStatistics((prev) => ({
-						...prev,
-						approved: prev.approved + approvedProposalsRes.proposals.length,
-					}));
-
-				setApprovedProposals(reviewedProposalsWithMeta);
 			} catch (err) {
 				console.error("Error loading reviewer data:", err);
 			}
 		};
 		if (reviewer) {
-			console.log("REVIEWER", reviewer);
 			fetchReviewerData();
 		}
 	}, [reviewer]);
 
-	const handleRefresh = () => {
-		setRefreshing(true);
-		setTimeout(() => {
-			window.location.reload(); // Refresh the page
-		}, 1000); // Optional: 1 second delay for UX
-	};
-
-	const [refreshing, setRefreshing] = useState(false);
-
-	const fetchProposalHistory = async (proposalId) => {
-		try {
-			const historyRef = collection(db, "Proposals", proposalId, "history");
-			const historyQuery = query(historyRef, orderBy("version", "desc"));
-
-			const snapshot = await getDocs(historyQuery);
-			return snapshot.docs.map((doc) => doc.data());
-		} catch (error) {
-			console.error("Error fetching proposal history:", error);
-			return [];
-		}
-	};
-	const toggleExpand = async (id) => {
-		//////remove
-		const history = await fetchProposalHistory(id);
-
-		if (expandedProposal === id) {
-			setExpandedProposal(null);
-			setReviewComment("");
-			setReviewStatus("Reviewed");
-		} else {
-			setExpandedProposal(id);
-			setReviewComment("");
-			setReviewStatus("Reviewed");
-
-			// Fetch history when expanding
-			try {
-				const history = await fetchProposalHistory(id);
-				setProposals((prev) =>
-					prev.map((p) => (p.id === id ? { ...p, history } : p)),
-				);
-			} catch (error) {
-				console.error("Failed to fetch proposal history:", error);
-			}
-
-			setTimeout(() => {
-				if (commentInputRef.current) {
-					commentInputRef.current.focus();
-				}
-			}, 100);
-		}
-	};
 	const CommentItem = ({ comment, reviewer, version }) => {
 		// Explicitly determine if this is a reviewer comment or user comment
 		const isReviewerComment = Boolean(comment.reviewerName);
@@ -433,9 +274,8 @@ export default function ReviewerProposalViewContent({
 
 		return (
 			<div
-				className={`bg-gray-800 p-3 rounded border-l-4 ${borderColor} ${
-					isCurrentReviewer ? "ml-auto" : "mr-auto"
-				} max-w-[90%] break-words`}
+				className={`bg-gray-800 p-3 rounded border-l-4 ${borderColor} ${isCurrentReviewer ? "ml-auto" : "mr-auto"
+					} max-w-[90%] break-words`}
 			>
 				<div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-1 gap-1">
 					<div className="flex items-center gap-2">
@@ -465,7 +305,7 @@ export default function ReviewerProposalViewContent({
 	};
 
 	const handleSubmitReview = async (proposalId) => {
-		console.log("Reviewer: ", reviewer);
+		// console.log("Reviewer: ", reviewer);
 		if (
 			!reviewComment.trim() ||
 			(reviewStatus === "Approved" && reviewer.level < 1 && !selectedReviewer)
@@ -492,7 +332,7 @@ export default function ReviewerProposalViewContent({
 					alert("Reviewer not found in nextReviewers list.");
 					return;
 				}
-				console.log(fullReviewer);
+				// console.log(fullReviewer);
 				// Case: Forward to next reviewer
 				await apiRequest(`/api/proposal/${proposalId}/forward`, {
 					method: "POST",
@@ -522,39 +362,33 @@ export default function ReviewerProposalViewContent({
 					prevProposals.map((proposal) =>
 						proposal.id === proposalId
 							? {
-									...proposal,
-									status: "pending",
-									currentReviewer: selectedReviewer,
-									reviewerHistory: [
-										...(proposal.reviewerHistory || []),
-										{
-											...reviewer,
-											level: proposal.level || 1,
-											decision: "approved",
-											comments: reviewComment,
-											reviewedAt: new Date(),
-										},
-									],
-									comments: [
-										...(proposal.comments || []),
-										{
-											text: reviewComment,
-											reviewerName:
-												reviewer.displayName || reviewer.name || "Reviewer",
-											timestamp: new Date(),
-											status: "approved",
-										},
-									],
-								}
+								...proposal,
+								status: "pending",
+								currentReviewer: selectedReviewer,
+								reviewerHistory: [
+									...(proposal.reviewerHistory || []),
+									{
+										...reviewer,
+										level: proposal.level || 1,
+										decision: "approved",
+										comments: reviewComment,
+										reviewedAt: new Date(),
+									},
+								],
+								comments: [
+									...(proposal.comments || []),
+									{
+										text: reviewComment,
+										reviewerName:
+											reviewer.displayName || reviewer.name || "Reviewer",
+										timestamp: new Date(),
+										status: "approved",
+									},
+								],
+							}
 							: proposal,
 					),
 				);
-
-				setStatistics((prev) => ({
-					...prev,
-					pending: (prev.pending || 0) + 1,
-					approved: prev.approved, // not approved fully yet, just forwarded
-				}));
 			} else if (reviewStatus === "Approved") {
 				// Case: Level 2 or 3 reviewer approving without selecting next reviewer
 				// Forward to next level with empty reviewer details
@@ -591,91 +425,64 @@ export default function ReviewerProposalViewContent({
 					prevProposals.map((proposal) =>
 						proposal.id === proposalId
 							? {
-									...proposal,
-									status: newStatus,
-									currentReviewer: isFinalApproval ? "" : "", // Empty for next level
-									reviewerHistory: [
-										...(proposal.reviewerHistory || []),
-										{
-											...reviewer,
-											level: reviewer.level,
-											decision: "approved",
-											comments: reviewComment,
-											reviewedAt: new Date(),
-										},
-									],
-									comments: [
-										...(proposal.comments || []),
-										{
-											text: reviewComment,
-											reviewerName:
-												reviewer.displayName || reviewer.name || "Reviewer",
-											timestamp: new Date(),
-											status: "approved",
-										},
-									],
-								}
+								...proposal,
+								status: newStatus,
+								currentReviewer: isFinalApproval ? "" : "", // Empty for next level
+								reviewerHistory: [
+									...(proposal.reviewerHistory || []),
+									{
+										...reviewer,
+										level: reviewer.level,
+										decision: "approved",
+										comments: reviewComment,
+										reviewedAt: new Date(),
+									},
+								],
+								comments: [
+									...(proposal.comments || []),
+									{
+										text: reviewComment,
+										reviewerName:
+											reviewer.displayName || reviewer.name || "Reviewer",
+										timestamp: new Date(),
+										status: "approved",
+									},
+								],
+							}
 							: proposal,
 					),
 				);
-
-				// Update statistics based on whether it's final approval or forwarding
-				if (isFinalApproval) {
-					setStatistics((prev) => ({
-						...prev,
-						pending: Math.max(0, prev.pending - 1),
-						approved: prev.approved + 1,
-					}));
-				} else {
-					setStatistics((prev) => ({
-						...prev,
-						pending: prev.pending, // Stays pending as it's forwarded to next level
-						approved: prev.approved,
-					}));
-				}
 			} else {
 				// Case: Final decision (Reviewed / Rejected etc)
-				await updateProposalStatusReviewer(
-					proposalId,
-					reviewStatus,
-					reviewComment,
-					reviewer.displayName || reviewer.name || "Reviewer",
-				);
+				await apiRequest(`/api/proposal/${proposalId}/status`, {
+					method: "PUT",
+					body: JSON.stringify({
+						newStatus: reviewStatus,
+						remarks: reviewComment,
+						userId: reviewer.uid,
+					}),
+				});
 
 				setProposals((prevProposals) =>
 					prevProposals.map((proposal) =>
 						proposal.id === proposalId
 							? {
-									...proposal,
-									status: reviewStatus,
-									comments: [
-										...(proposal.comments || []),
-										{
-											text: reviewComment,
-											reviewerName:
-												reviewer.displayName || reviewer.name || "Reviewer",
-											timestamp: new Date(),
-											status: reviewStatus,
-										},
-									],
-								}
+								...proposal,
+								status: reviewStatus,
+								comments: [
+									...(proposal.comments || []),
+									{
+										text: reviewComment,
+										reviewerName:
+											reviewer.displayName || reviewer.name || "Reviewer",
+										timestamp: new Date(),
+										status: reviewStatus,
+									},
+								],
+							}
 							: proposal,
 					),
 				);
-
-				setStatistics((prev) => {
-					const newStats = { ...prev };
-					newStats.pending = Math.max(0, newStats.pending - 1);
-
-					const statusKey =
-						reviewStatus.toLowerCase() === "reviewed"
-							? "changes"
-							: reviewStatus.toLowerCase();
-
-					newStats[statusKey] = (newStats[statusKey] || 0) + 1;
-
-					return newStats;
-				});
 			}
 
 			setSuccessMessage(
@@ -686,6 +493,7 @@ export default function ReviewerProposalViewContent({
 			setTimeout(() => {
 				setExpandedProposal(null);
 				setSuccessMessage("");
+				onBack();
 			}, 3000);
 		} catch (err) {
 			console.error("Error updating proposal status:", err);
@@ -694,24 +502,6 @@ export default function ReviewerProposalViewContent({
 			setIsSubmitting(false);
 		}
 	};
-
-	const filteredProposals =
-		filter === "all"
-			? proposals
-			: proposals.filter((proposal) => {
-					if (filter === "pending") {
-						return (
-							proposal.status?.toLowerCase() === "pending" || !proposal.status
-						);
-					} else if (filter === "rejected") {
-						return proposal.status?.toLowerCase() === "rejected";
-					} else if (filter === "approved" && reviewer.level == 2) {
-						return proposal.status?.toLowerCase() === "approved";
-					} else if (filter === "changes") {
-						return proposal.status?.toLowerCase() === "reviewed";
-					}
-					return true;
-				});
 
 	const getStatusIcon = (status) => {
 		switch (status?.toLowerCase()) {
@@ -800,7 +590,7 @@ export default function ReviewerProposalViewContent({
 							onClick={onBack}
 							className="mt-4 px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-md transition"
 						>
-							Return to Dashboard
+							Return to Proposals List
 						</button>
 					</div>
 				</div>
@@ -815,23 +605,9 @@ export default function ReviewerProposalViewContent({
 					<FileText className="h-6 w-6 flex-shrink-0" />
 					<span className="truncate">Proposal Review</span>
 				</h1>
-
-				<div className="flex items-center gap-3">
-					<button
-						onClick={handleRefresh}
-						disabled={refreshing}
-						className="flex items-center gap-2 bg-gray-700 hover:bg-gray-600 px-3 py-2 rounded-md text-sm text-white disabled:opacity-50"
-					>
-						<RefreshCw size={16} className={refreshing ? "animate-spin" : ""} />
-						{refreshing ? "Refreshing..." : "Refresh Data"}
-					</button>
-					<button
-						onClick={handleLogout}
-						className="flex items-center gap-2 bg-red-700 hover:bg-red-600 px-3 py-2 rounded-md text-sm text-white disabled:opacity-50"
-					>
-						<span className="truncate">Logout</span>
-					</button>
-				</div>
+				<Button onClick={onBack} variant="outline">
+					Back to List
+				</Button>
 			</div>
 
 			{successMessage && (
@@ -840,123 +616,30 @@ export default function ReviewerProposalViewContent({
 				</div>
 			)}
 
-			<div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-				<div
-					className={`bg-gray-800 rounded-lg p-4 border ${filter === "all" ? "border-white" : "border-gray-700"} cursor-pointer hover:bg-gray-700 transition min-w-0`}
-					onClick={() => setFilter("all")}
-				>
-					<div className="flex items-center justify-between">
-						<div className="min-w-0">
-							<p className="text-xs sm:text-sm text-gray-400 truncate">
-								View All Proposals
-							</p>
-							<h3 className="text-xl sm:text-2xl font-bold text-white truncate">
-								{statistics.total}
-							</h3>
-						</div>
-						<FileText size={20} className="text-blue-500 flex-shrink-0" />
-					</div>
-				</div>
-
-				<div
-					className={`bg-gray-800 rounded-lg p-4 border ${filter === "pending" ? "border-white" : "border-gray-700"} cursor-pointer hover:bg-gray-700 transition min-w-0`}
-					onClick={() => setFilter("pending")}
-				>
-					<div className="flex items-center justify-between">
-						<div className="min-w-0">
-							<p className="text-xs sm:text-sm text-gray-400 truncate">
-								View Pending Proposals
-							</p>
-							<h3 className="text-xl sm:text-2xl font-bold text-white truncate">
-								{statistics.pending}
-							</h3>
-						</div>
-						<Clock size={20} className="text-yellow-500 flex-shrink-0" />
-					</div>
-				</div>
-
-				<div
-					className={`bg-gray-800 rounded-lg p-4 border ${filter === "approved" ? "border-white" : "border-gray-700"} cursor-pointer hover:bg-gray-700 transition min-w-0`}
-					onClick={() => setFilter("approved")}
-				>
-					<div className="flex items-center justify-between">
-						<div className="min-w-0">
-							<p className="text-xs sm:text-sm text-gray-400 truncate">
-								View Approved Proposals
-							</p>
-							<h3 className="text-xl sm:text-2xl font-bold text-white truncate">
-								{statistics.approved}
-							</h3>
-						</div>
-						<CheckCircle size={20} className="text-green-500 flex-shrink-0" />
-					</div>
-				</div>
-
-				<div
-					className={`bg-gray-800 rounded-lg p-4 border ${filter === "rejected" ? "border-white" : "border-gray-700"} cursor-pointer hover:bg-gray-700 transition min-w-0`}
-					onClick={() => setFilter("rejected")}
-				>
-					<div className="flex items-center justify-between">
-						<div className="min-w-0">
-							<p className="text-xs sm:text-sm text-gray-400 truncate">
-								View Rejected Proposals
-							</p>
-							<h3 className="text-xl sm:text-2xl font-bold text-white truncate">
-								{statistics.rejected}
-							</h3>
-						</div>
-						<XCircle size={20} className="text-red-500 flex-shrink-0" />
-					</div>
-				</div>
-			</div>
-
-			<div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 gap-3">
-				<div className="min-w-0">
-					{reviewer?.departments?.length > 0 ? (
-						<span className="text-sm text-gray-400 truncate">
-							Departments: {reviewer.departments.join(", ")}
-						</span>
-					) : (
-						<span className="text-sm text-gray-400 truncate">
-							No assigned departments
-						</span>
-					)}
-				</div>
-			</div>
-
-			{filteredProposals.length === 0 && filter != "approved" ? (
+			{proposals.length === 0 && !loading && (
 				<div className="bg-gray-800 rounded-lg p-8 text-center">
 					<File className="h-12 w-12 mx-auto mb-4 text-gray-500" />
 					<p className="text-gray-400 break-words">
-						{filter === "all"
-							? "No proposals found in your assigned departments."
-							: `No ${filter} proposals found.`}
+						No proposal found or you may not have permission to view it.
 					</p>
 					<p className="text-sm text-gray-500 mt-2 break-words">
-						Make sure your departments match proposal departments.
+						Please check the proposal ID and try again.
 					</p>
 				</div>
-			) : filter == "approved" && approvedProposals.length == 0 ? (
-				<div className="bg-gray-800 rounded-lg p-8 text-center">
-					<File className="h-12 w-12 mx-auto mb-4 text-gray-500" />
-					<p className="text-gray-400 break-words">
-						No {filter} proposals found.
-					</p>
-				</div>
-			) : filter == "approved" &&
-				approvedProposals.length > 0 &&
-				reviewer.level != 2 ? (
-				<ApprovedProposalsCard proposals={approvedProposals} />
-			) : (
+			)}
+
+			{proposals.length > 0 && (
 				<div className="space-y-4">
-					{filteredProposals.map((proposal) => (
+					{proposals.map((proposal) => (
 						<div
 							key={proposal.id}
-							className={`bg-gray-800 rounded-lg border ${expandedProposal === proposal.id ? "border-blue-500" : "border-gray-700"} transition-all`}
+							className={`bg-gray-800 rounded-lg border ${expandedProposal === proposal.id
+									? "border-blue-500"
+									: "border-gray-700"
+								} transition-all`}
 						>
 							<div
 								className="p-4 cursor-pointer flex justify-between items-center"
-								onClick={() => toggleExpand(proposal.id)}
 							>
 								<div className="flex items-center gap-3 min-w-0">
 									<div className="flex-shrink-0">
@@ -976,9 +659,7 @@ export default function ReviewerProposalViewContent({
 											{proposal.department && (
 												<span className="flex items-center whitespace-nowrap">
 													<Layers size={12} className="mr-1 flex-shrink-0" />
-													<span className="truncate">
-														{proposal.department}
-													</span>
+													<span className="truncate">{proposal.department}</span>
 												</span>
 											)}
 											{proposal.proposerName && (
@@ -1000,9 +681,11 @@ export default function ReviewerProposalViewContent({
 								</div>
 
 								<div className="flex items-center gap-3 ml-2">
-									<div className="hidden sm:block text-sm text-white">
-										{getStatusBadge(proposal.status)}
-									</div>
+									{((proposal.currentReviewer?.reviewerId === reviewer?.uid) || (reviewer?.level === 2)) && (
+										<div className="hidden sm:block text-sm text-white">
+											{getStatusBadge(proposal.status)}
+										</div>
+									)}
 									{expandedProposal === proposal.id ? (
 										<ChevronUp
 											size={18}
@@ -1182,7 +865,8 @@ export default function ReviewerProposalViewContent({
 													{!proposal.isIndividual && proposal.groupDetails && (
 														<div className="col-span-1 break-words bg-gray-800 p-3 rounded">
 															<h5 className="text-xs font-medium text-gray-400 flex items-center gap-1">
-																<Users2 size={14} /> Group Registration Details
+																<Users2 size={14} /> Group Registration
+																Details
 															</h5>
 															<div className="grid grid-cols-2 gap-2 mt-2">
 																<div>
@@ -1199,7 +883,8 @@ export default function ReviewerProposalViewContent({
 																		Fee Type:
 																	</p>
 																	<p className="text-sm text-gray-300 capitalize">
-																		{proposal.groupDetails.feeType === "perhead"
+																		{proposal.groupDetails.feeType ===
+																			"perhead"
 																			? "Per Head"
 																			: "Per Group"}
 																	</p>
@@ -1292,7 +977,8 @@ export default function ReviewerProposalViewContent({
 
 												<div className="bg-gray-700 p-4 rounded max-h-60 overflow-y-auto space-y-3">
 													{/* Current version comments */}
-													{proposal.comments && proposal.comments.length > 0 ? (
+													{proposal.comments &&
+														proposal.comments.length > 0 ? (
 														<>
 															<div className="text-xs text-gray-500 mb-2 px-2 py-1 bg-gray-800 rounded-full w-fit">
 																Current Version
@@ -1355,7 +1041,8 @@ export default function ReviewerProposalViewContent({
 														proposal.comments.length === 0) &&
 														(!proposal.history ||
 															!proposal.history.some(
-																(v) => v.comments && v.comments.length > 0,
+																(v) =>
+																	v.comments && v.comments.length > 0,
 															)) && (
 															<p className="text-sm text-gray-500 italic break-words">
 																No comments found in the current version.
@@ -1364,131 +1051,132 @@ export default function ReviewerProposalViewContent({
 												</div>
 											</div>
 
-											<div className="bg-gray-700 p-4 rounded">
-												<h4 className="text-sm font-medium text-gray-300 mb-3 flex items-center">
-													<PenTool size={16} className="mr-1 flex-shrink-0" />
-													<span>Add Review:</span>
-												</h4>
+											{((proposal.currentReviewer?.reviewerId === reviewer?.uid) || (reviewer?.level === 2)) && (
+												<div className="bg-gray-700 p-4 rounded">
+													<h4 className="text-sm font-medium text-gray-300 mb-3 flex items-center">
+														<PenTool size={16} className="mr-1 flex-shrink-0" />
+														<span>Add Review:</span>
+													</h4>
 
-												<div className="space-y-3">
-													<div>
-														<label className="block text-xs font-medium text-gray-400 mb-1">
-															Review Status:
-														</label>
-														<div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-															<button
-																type="button"
-																className={`flex items-center justify-center px-3 py-2 rounded-md text-sm ${
-																	reviewStatus === "Reviewed"
-																		? "bg-blue-700 text-white"
-																		: "bg-gray-600 text-gray-300 hover:bg-gray-500"
-																} whitespace-nowrap`}
-																onClick={() => setReviewStatus("Reviewed")}
-															>
-																<RefreshCw
-																	size={14}
-																	className="mr-1 flex-shrink-0"
-																/>
-																<span>Request Changes</span>
-															</button>
-
-															<button
-																type="button"
-																className={`flex items-center justify-center px-3 py-2 rounded-md text-sm ${
-																	reviewStatus === "Approved"
-																		? "bg-green-700 text-white"
-																		: "bg-gray-600 text-gray-300 hover:bg-gray-500"
-																} whitespace-nowrap`}
-																onClick={() => setReviewStatus("Approved")}
-															>
-																<ThumbsUp
-																	size={14}
-																	className="mr-1 flex-shrink-0"
-																/>
-																<span>{"Approve"}</span>
-															</button>
-
-															<button
-																type="button"
-																className={`flex items-center justify-center px-3 py-2 rounded-md text-sm ${
-																	reviewStatus === "Rejected"
-																		? "bg-red-700 text-white"
-																		: "bg-gray-600 text-gray-300 hover:bg-gray-500"
-																} whitespace-nowrap`}
-																onClick={() => setReviewStatus("Rejected")}
-															>
-																<ThumbsDown
-																	size={14}
-																	className="mr-1 flex-shrink-0"
-																/>
-																<span>Reject</span>
-															</button>
-														</div>
-													</div>
-
-													{reviewStatus == "Approved" && reviewer.level < 1 && (
-														<div className="p-6 bg-gray-800 rounded-lg shadow-md">
+													<div className="space-y-3">
+														<div>
 															<label className="block text-xs font-medium text-gray-400 mb-1">
-																Select next reviewer
+																Review Status:
 															</label>
+															<div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+																<button
+																	type="button"
+																	className={`flex items-center justify-center px-3 py-2 rounded-md text-sm ${reviewStatus === "Reviewed"
+																			? "bg-blue-700 text-white"
+																			: "bg-gray-600 text-gray-300 hover:bg-gray-500"
+																		} whitespace-nowrap`}
+																	onClick={() => setReviewStatus("Reviewed")}
+																>
+																	<RefreshCw
+																		size={14}
+																		className="mr-1 flex-shrink-0"
+																	/>
+																	<span>Request Changes</span>
+																</button>
 
-															<ComboboxReviewer
-																options={filteredReviewers.map((r) => ({
-																	value: r.id,
-																	label: `${r.name} - [ ${r.email} ]`,
-																}))}
-																selected={selectedReviewer}
-																setSelected={setSelectedReviewer}
-															/>
+																<button
+																	type="button"
+																	className={`flex items-center justify-center px-3 py-2 rounded-md text-sm ${reviewStatus === "Approved"
+																			? "bg-green-700 text-white"
+																			: "bg-gray-600 text-gray-300 hover:bg-gray-500"
+																		} whitespace-nowrap`}
+																	onClick={() => setReviewStatus("Approved")}
+																>
+																	<ThumbsUp
+																		size={14}
+																		className="mr-1 flex-shrink-0"
+																	/>
+																	<span>{"Approve"}</span>
+																</button>
+
+																<button
+																	type="button"
+																	className={`flex items-center justify-center px-3 py-2 rounded-md text-sm ${reviewStatus === "Rejected"
+																			? "bg-red-700 text-white"
+																			: "bg-gray-600 text-gray-300 hover:bg-gray-500"
+																		} whitespace-nowrap`}
+																	onClick={() => setReviewStatus("Rejected")}
+																>
+																	<ThumbsDown
+																		size={14}
+																		className="mr-1 flex-shrink-0"
+																	/>
+																	<span>Reject</span>
+																</button>
+															</div>
 														</div>
-													)}
 
-													<div>
-														<label className="block text-xs font-medium text-gray-400 mb-1">
-															Review Comment:
-														</label>
-														<textarea
-															ref={commentInputRef}
-															value={reviewComment}
-															onChange={(e) => setReviewComment(e.target.value)}
-															placeholder="Enter your review comments here..."
-															className="w-full p-3 bg-gray-800 border border-gray-600 rounded-md text-white text-sm min-h-24 break-words whitespace-pre-wrap"
-															required
-														></textarea>
-														<p className="text-xs text-gray-500 mt-1 break-words">
-															Please provide detailed feedback, especially if
-															rejecting or requesting changes.
-														</p>
-													</div>
+														{reviewStatus == "Approved" && reviewer.level < 1 && (
+															<div className="p-6 bg-gray-800 rounded-lg shadow-md">
+																<label className="block text-xs font-medium text-gray-400 mb-1">
+																	Select next reviewer
+																</label>
 
-													<div className="pt-2">
-														<button
-															type="button"
-															onClick={() => handleSubmitReview(proposal.id)}
-															disabled={
-																isSubmitting ||
-																!reviewComment.trim() ||
-																(reviewStatus === "Approved" &&
-																	reviewer?.level < 1 &&
-																	!selectedReviewer)
-															}
-															className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded-md py-2 flex items-center justify-center gap-2 transition whitespace-nowrap"
-														>
-															{isSubmitting ? (
-																<>
-																	<div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full flex-shrink-0"></div>
-																	<span>Submitting...</span>
-																</>
-															) : (
-																<>
-																	<Send size={16} className="flex-shrink-0" />
-																	<span>Submit Review</span>
-																</>
-															)}
-														</button>
+																<ComboboxReviewer
+																	options={filteredReviewers.map((r) => ({
+																		value: r.id,
+																		label: `${r.name} - [ ${r.email} ]`,
+																	}))}
+																	selected={selectedReviewer}
+																	setSelected={setSelectedReviewer}
+																/>
+															</div>
+														)}
+
+														<div>
+															<label className="block text-xs font-medium text-gray-400 mb-1">
+																Review Comment:
+															</label>
+															<Textarea
+																ref={commentInputRef}
+																value={reviewComment}
+																onChange={(e) =>
+																	setReviewComment(e.target.value)
+																}
+																placeholder="Enter your review comments here..."
+																className="w-full p-3 bg-gray-800 border border-gray-600 rounded-md text-white text-sm min-h-24 break-words whitespace-pre-wrap"
+																required
+															/>
+															<p className="text-xs text-gray-500 mt-1 break-words">
+																Please provide detailed feedback, especially if
+																rejecting or requesting changes.
+															</p>
+														</div>
+
+														<div className="pt-2">
+															<button
+																type="button"
+																onClick={() => handleSubmitReview(proposal.id)}
+																disabled={
+																	isSubmitting ||
+																	!reviewComment.trim() ||
+																	(reviewStatus === "Approved" &&
+																		reviewer?.level < 1 &&
+																		!selectedReviewer)
+																}
+																className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded-md py-2 flex items-center justify-center gap-2 transition whitespace-nowrap"
+															>
+																{isSubmitting ? (
+																	<>
+																		<div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full flex-shrink-0"></div>
+																		<span>Submitting...</span>
+																	</>
+																) : (
+																	<>
+																		<Send size={16} className="flex-shrink-0" />
+																		<span>Submit Review</span>
+																	</>
+																)}
+															</button>
+														</div>
 													</div>
 												</div>
-											</div>
+											)}
 										</div>
 									</div>
 								</div>

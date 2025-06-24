@@ -1,5 +1,5 @@
 import { db } from "@/app/firebase/firebase"; // make sure to check for db too
-import { doc, getDoc, updateDoc, serverTimestamp } from "firebase/firestore";
+import { doc, getDoc, updateDoc, serverTimestamp, deleteDoc } from "firebase/firestore";
 import { NextRequest, NextResponse } from "next/server";
 
 /**
@@ -29,7 +29,7 @@ export async function PATCH(req, { params }) {
 		const reviewerInfo = reviewerSnap.data();
 
 		// Get proposal
-		const proposalRef = doc(db, "Proposals", await params.id);
+		const proposalRef = doc(db, "Proposals", params.id);
 		const proposalSnap = await getDoc(proposalRef);
 
 		if (!proposalSnap.exists()) {
@@ -72,8 +72,9 @@ export async function PATCH(req, { params }) {
  */
 export async function GET(_, { params }) {
 	try {
-		const proposalId = await params.id;
-		const docSnap = await getDoc(doc(db, "Proposals", proposalId));
+		const { id: proposalId } = await params;
+		const docRef = doc(db, "Proposals", proposalId);
+		const docSnap = await getDoc(docRef);
 		if (!docSnap.exists()) {
 			return NextResponse.json(
 				{ success: false, message: "Proposal not found" },
@@ -98,8 +99,7 @@ export async function GET(_, { params }) {
  */
 export async function PUT(req, { params }) {
 	try {
-		const { id } = await params;
-		const proposalId = id;
+		const { id: proposalId } = params;
 		const proposalData = await req.json();
 
 		// Remove id before updating
@@ -132,6 +132,23 @@ export async function PUT(req, { params }) {
 		return NextResponse.json({ success: true });
 	} catch (error) {
 		console.error("Error updating proposal:", error);
+		return NextResponse.json(
+			{ success: false, error: error.message },
+			{ status: 500 },
+		);
+	}
+}
+
+/**
+ * Delete a proposal by proposal ID
+ */
+export async function DELETE(_, { params }) {
+	try {
+		const { id: proposalId } = params;
+		await deleteDoc(doc(db, "Proposals", proposalId));
+		return NextResponse.json({ success: true });
+	} catch (error) {
+		console.error("Error deleting proposal:", error);
 		return NextResponse.json(
 			{ success: false, error: error.message },
 			{ status: 500 },

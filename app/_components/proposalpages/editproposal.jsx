@@ -305,25 +305,12 @@ export default function EditProposalContent({ proposalId, onBack }) {
 				body: JSON.stringify(updatedProposal),
 			});
 
-			setSuccess(
-				isCreatingNewVersion
-					? `Proposal updated successfully! v${newVersion}`
-					: `Proposal updated successfully!`,
-			);
-
-			// Update local state
-			setProposal((prev) => ({
-				...prev,
-				...updatedProposal,
-			}));
-
-			// Redirect back after delay
-			setTimeout(() => {
-				if (onBack) onBack();
-			}, 500);
+			setSuccess("Proposal updated successfully!");
+			setLoading(false);
+			router.push("/user/proposals");
 		} catch (err) {
-			console.error("Error updating proposal:", err);
-			setError("Failed to update proposal: " + err.message);
+			console.error("Error submitting proposal:", err);
+			setError("Failed to submit proposal. Please try again.");
 		} finally {
 			setLoading(false);
 		}

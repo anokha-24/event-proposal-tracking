@@ -3,10 +3,11 @@
 import { useState, useEffect } from "react";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import {
-	getProposals,
-	getProposalsByStatus,
-	deleteProposal,
+	getPendingProposalsByUser,
+	getReviewedProposalsByUser,
 } from "../../api/proposalService";
+import { Button } from "@/components/ui/button";
+import { FileText, CheckCircle, Plus } from "lucide-react";
 
 export default function DashboardContent({ onNavigate }) {
 	const [pendingCount, setPendingCount] = useState(0);
@@ -56,20 +57,20 @@ export default function DashboardContent({ onNavigate }) {
 	}, [userId]);
 
 	return (
-		<div className="h-screen overflow-y-auto bg-gray-900">
-			<div className="max-w-4xl mx-auto p-6">
-				<h1 className="text-3xl font-bold mb-6 text-white text-center">
+		<div className="min-h-screen w-full">
+			<div className="max-w-5xl mx-auto p-4 sm:p-6 lg:p-8">
+				<h1 className="text-3xl sm:text-4xl font-bold mb-8 text-white text-center">
 					Workshop & Event Proposal Dashboard
 				</h1>
 
-				{error && <p className="text-red-400 text-center">{error}</p>}
+				{error && <p className="text-red-400 text-center mb-6">{error}</p>}
 
 				{/* Welcome Message */}
-				<div className="bg-gray-800 p-6 rounded-lg shadow-lg mb-8">
-					<h2 className="text-xl font-semibold text-white mb-4">
+				<div className="bg-slate-800/50 border border-slate-700/50 p-6 rounded-2xl shadow-lg mb-8">
+					<h2 className="text-2xl font-semibold text-slate-100 mb-2">
 						Welcome, Proposer!
 					</h2>
-					<p className="text-gray-300">
+					<p className="text-slate-300">
 						This platform enables you to submit and manage proposals for
 						workshops and events. Create compelling proposals, track their
 						review progress, and collaborate with reviewers.
@@ -79,94 +80,105 @@ export default function DashboardContent({ onNavigate }) {
 				{/* Quick Actions */}
 				<div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
 					<div
-						className="bg-blue-900/30 p-6 rounded-lg border border-blue-700 relative cursor-pointer hover:bg-blue-800 transition-all duration-300"
+						className="bg-blue-600/90 p-6 rounded-2xl relative cursor-pointer hover:bg-blue-600 transition-all duration-300 group shadow-lg hover:shadow-blue-500/30"
 						onClick={() => onNavigate && onNavigate("add-proposal")}
 					>
 						<div className="flex justify-between items-start">
-							<h3 className="text-blue-300 text-lg font-medium mb-2">
+							<h3 className="text-white text-lg font-semibold mb-2">
 								New Workshop Proposal
 							</h3>
-							<div className="bg-blue-700 rounded-full w-6 h-6 flex items-center justify-center">
-								<span className="text-white text-lg font-bold pl-0.2 pb-0.5">
-									+
-								</span>
+							<div className="bg-white/20 rounded-full w-7 h-7 flex items-center justify-center transition-all duration-300 group-hover:scale-110 group-hover:bg-white/30">
+								<Plus className="w-5 h-5 text-white" />
 							</div>
 						</div>
-						<p className="text-gray-300 text-sm">
+						<p className="text-blue-100 text-sm">
 							Submit a detailed proposal for technical workshops, training
 							sessions, or hands-on learning experiences.
 						</p>
 					</div>
 					<div
-						className="bg-purple-900/30 p-6 rounded-lg border border-purple-700 relative cursor-pointer hover:bg-purple-800 transition-all duration-300"
+						className="bg-purple-600/90 p-6 rounded-2xl relative cursor-pointer hover:bg-purple-600 transition-all duration-300 group shadow-lg hover:shadow-purple-500/30"
 						onClick={() => onNavigate && onNavigate("add-proposal")}
 					>
 						<div className="flex justify-between items-start">
-							<h3 className="text-purple-300 text-lg font-medium mb-2">
+							<h3 className="text-white text-lg font-semibold mb-2">
 								New Event Proposal
 							</h3>
-							<div className="bg-purple-700 rounded-full w-6 h-6 flex items-center justify-center">
-								<span className="text-white text-lg font-bold pl-0.2 pb-0.5">
-									+
-								</span>
+							<div className="bg-white/20 rounded-full w-7 h-7 flex items-center justify-center transition-all duration-300 group-hover:scale-110 group-hover:bg-white/30">
+								<Plus className="w-5 h-5 text-white" />
 							</div>
 						</div>
-						<p className="text-gray-300 text-sm">
+						<p className="text-purple-100 text-sm">
 							Propose conferences, seminars, or networking events with clear
 							objectives and engagement plans.
 						</p>
 					</div>
 				</div>
 
+				{/* View Proposals Button */}
+				<div className="my-10 text-center">
+					<Button
+						onClick={() => onNavigate && onNavigate("view-proposals")}
+						className="inline-flex items-center justify-center w-full bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-16 px-8 rounded-2xl text-lg shadow-lg hover:shadow-indigo-500/50 transition-all duration-300 transform hover:-translate-y-1"
+					>
+						<FileText className="mr-3 h-6 w-6" />
+						View My Proposals
+					</Button>
+				</div>
+
 				{/* Stats Section */}
 				<div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-					<div className="bg-gray-800 p-6 rounded-lg shadow-md">
-						<h3 className="text-gray-400 text-sm uppercase mb-2">
+					<div className="bg-slate-800/50 border border-slate-700/50 p-6 rounded-2xl">
+						<h3 className="text-slate-400 text-sm font-semibold uppercase tracking-wider mb-2">
 							Proposals in Pending Status
 						</h3>
-						<p className="text-yellow-400 text-3xl font-bold">
+						<p className="text-yellow-400 text-4xl font-bold">
 							{loading ? "..." : pendingCount}
 						</p>
-						<p className="text-gray-500 text-xs mt-2">
+						<p className="text-slate-500 text-xs mt-2">
 							Awaiting review by the committee
 						</p>
 					</div>
-					<div className="bg-gray-800 p-6 rounded-lg shadow-md">
-						<h3 className="text-gray-400 text-sm uppercase mb-2">
+					<div className="bg-slate-800/50 border border-slate-700/50 p-6 rounded-2xl">
+						<h3 className="text-slate-400 text-sm font-semibold uppercase tracking-wider mb-2">
 							Proposals in Reviewed Status
 						</h3>
-						<p className="text-green-400 text-3xl font-bold">
+						<p className="text-green-400 text-4xl font-bold">
 							{loading ? "..." : reviewedCount}
 						</p>
-						<p className="text-gray-500 text-xs mt-2">Evaluation completed</p>
+						<p className="text-slate-500 text-xs mt-2">
+							Evaluation completed
+						</p>
 					</div>
 				</div>
 
 				{/* Proposal Guidelines */}
-				<div className="bg-gray-800 p-6 rounded-lg shadow-lg">
-					<h2 className="text-xl font-semibold text-white mb-4">
+				<div className="bg-slate-800/50 border border-slate-700/50 p-6 rounded-2xl shadow-lg">
+					<h2 className="text-2xl font-semibold text-slate-100 mb-4">
 						Proposal Guidelines
 					</h2>
-					<ul className="text-gray-300 space-y-3">
+					<ul className="text-slate-300 space-y-3">
 						<li className="flex items-start">
-							<span className="text-green-400 mr-2">✓</span>
-							Clearly define learning objectives and expected outcomes
+							<CheckCircle className="h-5 w-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" />
+							<span>
+								Clearly define learning objectives and expected outcomes
+							</span>
 						</li>
 						<li className="flex items-start">
-							<span className="text-green-400 mr-2">✓</span>
-							Include detailed participant engagement plans
+							<CheckCircle className="h-5 w-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" />
+							<span>Include detailed participant engagement plans</span>
 						</li>
 						<li className="flex items-start">
-							<span className="text-green-400 mr-2">✓</span>
-							Specify technical requirements (for workshops)
+							<CheckCircle className="h-5 w-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" />
+							<span>Specify technical requirements (for workshops)</span>
 						</li>
 						<li className="flex items-start">
-							<span className="text-green-400 mr-2">✓</span>
-							Provide realistic budget estimates
+							<CheckCircle className="h-5 w-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" />
+							<span>Provide realistic budget estimates</span>
 						</li>
 						<li className="flex items-start">
-							<span className="text-green-400 mr-2">✓</span>
-							Suggest preferred dates and durations
+							<CheckCircle className="h-5 w-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" />
+							<span>Suggest preferred dates and durations</span>
 						</li>
 					</ul>
 				</div>
