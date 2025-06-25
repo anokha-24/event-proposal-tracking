@@ -14,6 +14,7 @@ import { AlertCircle, } from "lucide-react";
 import { db } from "../../firebase/firebase";
 import { useRouter } from "next/navigation";
 import { getProposalById } from "../../api/proposalService";
+import { eventDurations, workshopDurations } from "../config";
 
 export default function EditProposalContent({ proposalId, onBack }) {
 	const router = useRouter();
@@ -408,7 +409,11 @@ export default function EditProposalContent({ proposalId, onBack }) {
 										name="isEvent"
 										checked={proposal.isEvent === true}
 										onChange={() =>
-											setProposal((prev) => ({ ...prev, isEvent: true }))
+											setProposal((prev) => ({
+												...prev,
+												isEvent: true,
+												duration: "",
+											}))
 										}
 										className="form-radio"
 									/>
@@ -420,7 +425,11 @@ export default function EditProposalContent({ proposalId, onBack }) {
 										name="isEvent"
 										checked={proposal.isEvent === false}
 										onChange={() =>
-											setProposal((prev) => ({ ...prev, isEvent: false }))
+											setProposal((prev) => ({
+												...prev,
+												isEvent: false,
+												duration: "",
+											}))
 										}
 										className="form-radio"
 									/>
@@ -484,15 +493,24 @@ export default function EditProposalContent({ proposalId, onBack }) {
 							<label className="block text-sm font-medium mb-1">
 								Duration *
 							</label>
-							<input
-								type="text"
+							<select
 								name="duration"
 								value={proposal.duration || ""}
 								onChange={handleChange}
-								placeholder="e.g. 3 hours"
 								className="w-full p-2 bg-gray-700 border border-gray-600 rounded-md text-white"
 								required
-							/>
+							>
+								<option value="" disabled>
+									Select duration
+								</option>
+								{(proposal.isEvent ? eventDurations : workshopDurations).map(
+									(option) => (
+										<option key={option.value} value={option.value}>
+											{option.label}
+										</option>
+									),
+								)}
+							</select>
 						</div>
 					</div>
 
@@ -750,7 +768,7 @@ export default function EditProposalContent({ proposalId, onBack }) {
 								name="preferredDays.day1"
 								value={proposal.preferredDays?.day1 || ""}
 								onChange={handleChange}
-								placeholder="e.g. 10:00 AM - 1:00 PM"
+								placeholder="e.g. 10:00 FN - 1:00 AN"
 								className="w-full p-2 bg-gray-700 border border-gray-600 rounded-md text-white"
 							/>
 						</div>
@@ -762,7 +780,7 @@ export default function EditProposalContent({ proposalId, onBack }) {
 								name="preferredDays.day2"
 								value={proposal.preferredDays?.day2 || ""}
 								onChange={handleChange}
-								placeholder="e.g. 2:00 PM - 5:00 PM"
+								placeholder="e.g. 2:00 AN - 5:00 AN"
 								className="w-full p-2 bg-gray-700 border border-gray-600 rounded-md text-white"
 							/>
 						</div>
@@ -774,7 +792,7 @@ export default function EditProposalContent({ proposalId, onBack }) {
 								name="preferredDays.day3"
 								value={proposal.preferredDays?.day3 || ""}
 								onChange={handleChange}
-								placeholder="e.g. 11:00 AM - 2:00 PM"
+								placeholder="e.g. 11:00 FN - 2:00 AN"
 								className="w-full p-2 bg-gray-700 border border-gray-600 rounded-md text-white"
 							/>
 						</div>

@@ -21,6 +21,7 @@ import { Loader2 } from "lucide-react";
 import { auth } from "../../firebase/firebase";
 import apiRequest from "@/utils/apiRequest";
 import { ComboboxReviewer } from "@/components/ui/combo-box-reviewer";
+import { eventDurations, workshopDurations } from "../config";
 
 const formSchema = z.object({
 	title: z.string().min(5, "Title must be at least 5 characters"),
@@ -146,6 +147,11 @@ export default function AddProposalContent() {
 	});
 
 	const isIndividual = form.watch("isIndividual");
+	const isEvent = form.watch("isEvent");
+
+	useEffect(() => {
+		form.setValue("duration", "");
+	}, [isEvent, form]);
 
 	async function onSubmit(values) {
 		setError("");
@@ -400,11 +406,21 @@ export default function AddProposalContent() {
 										<FormItem>
 											<FormLabel className="text-white">Duration *</FormLabel>
 											<FormControl>
-												<Input
-													placeholder="e.g. 3 hours"
+												<select
 													className="w-full p-2 bg-gray-700 border border-gray-600 rounded-md text-white"
 													{...field}
-												/>
+												>
+													<option value="" disabled>
+														Select duration
+													</option>
+													{(isEvent ? eventDurations : workshopDurations).map(
+														(option) => (
+															<option key={option.value} value={option.value}>
+																{option.label}
+															</option>
+														),
+													)}
+												</select>
 											</FormControl>
 											<FormMessage className="text-red-400" />
 										</FormItem>
@@ -767,7 +783,7 @@ export default function AddProposalContent() {
 											<FormLabel className="text-white">Day 1</FormLabel>
 											<FormControl>
 												<Input
-													placeholder="e.g. 10:00 AM - 1:00 PM"
+													placeholder="e.g. 10:00 FN - 1:00 AN"
 													className="w-full p-2 bg-gray-700 border border-gray-600 rounded-md text-white"
 													{...field}
 												/>
@@ -785,7 +801,7 @@ export default function AddProposalContent() {
 											<FormLabel className="text-white">Day 2</FormLabel>
 											<FormControl>
 												<Input
-													placeholder="e.g. 2:00 PM - 5:00 PM"
+													placeholder="e.g. 2:00 AN - 5:00 AN"
 													className="w-full p-2 bg-gray-700 border border-gray-600 rounded-md text-white"
 													{...field}
 												/>
@@ -803,7 +819,7 @@ export default function AddProposalContent() {
 											<FormLabel className="text-white">Day 3</FormLabel>
 											<FormControl>
 												<Input
-													placeholder="e.g. 11:00 AM - 2:00 PM"
+													placeholder="e.g. 11:00 FN - 2:00 AN"
 													className="w-full p-2 bg-gray-700 border border-gray-600 rounded-md text-white"
 													{...field}
 												/>
