@@ -1,10 +1,8 @@
-import { NextRequest, NextResponse } from "next/server";
-import { doc, getDoc, updateDoc, serverTimestamp } from "firebase/firestore";
-import { db } from "@/app/firebase/firebase";
+import { NextResponse } from "next/server";
 import { addProposalReply } from "../../../proposalService";
 
 export async function POST(request, { params }) {
-	const { id: proposalId } = params;
+	const { id: proposalId } = await params;
 	const  replyData  = await request.json();
 
 	try {

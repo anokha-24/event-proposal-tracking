@@ -69,7 +69,7 @@ export async function PUT(req, { params }) {
 				...(proposalData.comments || []),
 				{
 					text: remarks || `Status updated to ${newStatus}`,
-					reviewerName: proposalData.currentReviewer.email,
+					reviewerName: proposalData.currentReviewer.level === 2 ? "TCW" : (proposalData.currentReviewer.email ?? ""),
 					timestamp: new Date().toISOString(),
 					status: newStatus,
 				},

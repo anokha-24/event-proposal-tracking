@@ -28,11 +28,14 @@ export const createProposalSchema = z
 			day2: z.string().optional(),
 			day3: z.string().optional(),
 		}),
-		estimatedBudget: z.number().min(0, "Budget cannot be negative"),
+		expectedIncome: z.number().min(0, "Income cannot be negative"),
+		expectedExpense: z.number().min(0, "Expense cannot be negative"),
 		potentialFundingSource: z.string().optional(),
 		resourcePersonDetails: z
 			.string()
 			.min(5, "Resource person details required"),
+		isResourcePersonPaid: z.boolean(),
+		resourcePersonPayment: z.number().min(0, "Payment cannot be negative").optional(),
 		externalResources: z.string().optional(),
 		additionalRequirements: z.string().optional(),
 		targetAudience: z.string().optional(),
@@ -59,6 +62,13 @@ export const createProposalSchema = z
 				path: ["groupDetails"],
 				code: z.ZodIssueCode.custom,
 				message: "Group details are required when not an individual event",
+			});
+		}
+		if (data.isResourcePersonPaid && (data.resourcePersonPayment === undefined || data.resourcePersonPayment === null)) {
+			ctx.addIssue({
+				path: ["resourcePersonPayment"],
+				code: z.ZodIssueCode.custom,
+				message: "Payment amount is required if the resource person is paid.",
 			});
 		}
 	});

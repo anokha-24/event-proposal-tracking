@@ -55,6 +55,8 @@ export async function POST(req, { params }) {
 
 		console.log("CC", prevReviewer);
 
+		console.log("Current Reviewer", currentReviewer);
+
 		const { reviewerId, name, email } = currentReviewer || {};
 		if (!reviewerId || !name || !email) {
 			return NextResponse.json(

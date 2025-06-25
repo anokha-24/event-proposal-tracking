@@ -46,11 +46,14 @@ const formSchema = z.object({
 		day2: z.string().optional(),
 		day3: z.string().optional(),
 	}),
-	estimatedBudget: z.number().min(0, "Budget cannot be negative"),
+	expectedIncome: z.number().min(0, "Income cannot be negative"),
+	expectedExpense: z.number().min(0, "Expense cannot be negative"),
 	potentialFundingSource: z.string().optional(),
 	resourcePersonDetails: z
 		.string()
 		.min(5, "Resource person details are required"),
+	isResourcePersonPaid: z.boolean(),
+	resourcePersonPayment: z.number().min(0, "Payment cannot be negative").optional(),
 	externalResources: z.string().optional(),
 	additionalRequirements: z.string().optional(),
 	targetAudience: z.string().optional(),
@@ -137,9 +140,12 @@ export default function AddProposalContent() {
 				day2: "",
 				day3: "",
 			},
-			estimatedBudget: 0,
+			expectedIncome: 0,
+			expectedExpense: 0,
 			potentialFundingSource: "",
 			resourcePersonDetails: "",
+			isResourcePersonPaid: false,
+			resourcePersonPayment: 0,
 			externalResources: "",
 			additionalRequirements: "",
 			targetAudience: "",
@@ -148,6 +154,7 @@ export default function AddProposalContent() {
 
 	const isIndividual = form.watch("isIndividual");
 	const isEvent = form.watch("isEvent");
+	const isResourcePersonPaid = form.watch("isResourcePersonPaid");
 
 	useEffect(() => {
 		form.setValue("duration", "");
@@ -481,6 +488,83 @@ export default function AddProposalContent() {
 										</FormItem>
 									)}
 								/>
+
+								<div>
+									<FormLabel className="text-white block mb-2">
+										Will the resource person be paid? *
+									</FormLabel>
+									<FormField
+										control={form.control}
+										name="isResourcePersonPaid"
+										render={({ field }) => (
+											<FormItem className="flex items-center space-x-4">
+												<FormControl>
+													<div className="flex space-x-4">
+														<div>
+															<input
+																type="radio"
+																id="paid-yes"
+																checked={field.value === true}
+																onChange={() => field.onChange(true)}
+																className="form-radio"
+															/>
+															<label
+																htmlFor="paid-yes"
+																className="ml-2 text-white"
+															>
+																Yes
+															</label>
+														</div>
+														<div>
+															<input
+																type="radio"
+																id="paid-no"
+																checked={field.value === false}
+																onChange={() => field.onChange(false)}
+																className="form-radio"
+															/>
+															<label
+																htmlFor="paid-no"
+																className="ml-2 text-white"
+															>
+																No
+															</label>
+														</div>
+													</div>
+												</FormControl>
+											</FormItem>
+										)}
+									/>
+								</div>
+
+								{isResourcePersonPaid && (
+									<FormField
+										control={form.control}
+										name="resourcePersonPayment"
+										render={({ field }) => (
+											<FormItem>
+												<FormLabel className="text-white">
+													Payment Amount (₹) *
+												</FormLabel>
+												<FormControl>
+													<Input
+														type="number"
+														className="w-full p-2 bg-gray-700 border border-gray-600 rounded-md text-white"
+														{...field}
+														onChange={(e) =>
+															field.onChange(
+																e.target.value === ""
+																	? ""
+																	: Number(e.target.value),
+															)
+														}
+													/>
+												</FormControl>
+												<FormMessage className="text-red-400" />
+											</FormItem>
+										)}
+									/>
+								)}
 
 								<FormField
 									control={form.control}
@@ -843,11 +927,37 @@ export default function AddProposalContent() {
 							<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 								<FormField
 									control={form.control}
-									name="estimatedBudget"
+									name="expectedIncome"
 									render={({ field }) => (
 										<FormItem>
 											<FormLabel className="text-white">
-												Estimated Budget (₹) *
+												Expected Income (₹) *
+											</FormLabel>
+											<FormControl>
+												<Input
+													type="number"
+													className="w-full p-2 bg-gray-700 border border-gray-600 rounded-md text-white"
+													{...field}
+													onChange={(e) =>
+														field.onChange(
+															e.target.value === ""
+																? ""
+																: Number(e.target.value),
+														)
+													}
+												/>
+											</FormControl>
+											<FormMessage className="text-red-400" />
+										</FormItem>
+									)}
+								/>
+								<FormField
+									control={form.control}
+									name="expectedExpense"
+									render={({ field }) => (
+										<FormItem>
+											<FormLabel className="text-white">
+												Expected Expense (₹) *
 											</FormLabel>
 											<FormControl>
 												<Input

@@ -730,17 +730,33 @@ export default function ReviewerProposalViewContent({
 											</div>
 										)}
 
-										{version.estimatedBudget && (
-											<div className="break-words">
-												<h5 className="text-xs font-medium text-gray-400">
-													Estimated Budget:
-												</h5>
-												<p className="text-sm text-gray-300 whitespace-pre-wrap flex items-center">
-													<IndianRupee size={14} className="mr-1" />
-													{version.estimatedBudget}
-												</p>
-											</div>
-										)}
+										{(version.expectedIncome !== undefined ||
+											version.expectedExpense !== undefined ||
+											version.estimatedBudget !== undefined) &&
+											(() => {
+												const income = version.expectedIncome || 0;
+												const expense =
+													version.expectedExpense ||
+													version.estimatedBudget ||
+													0;
+												return (
+													<div className="break-words">
+														<h5 className="text-xs font-medium text-gray-400">
+															Budget
+														</h5>
+														<p className="text-sm text-green-400 whitespace-pre-wrap flex items-center">
+															Income:
+															<IndianRupee size={14} className="ml-1.5 mr-0.5" />
+															{income}
+														</p>
+														<p className="text-sm text-red-400 whitespace-pre-wrap flex items-center">
+															Expense:
+															<IndianRupee size={14} className="ml-1.5 mr-0.5" />
+															{expense}
+														</p>
+													</div>
+												);
+											})()}
 
 										{version.potentialFundingSource && (
 											<div className="break-words">
@@ -761,6 +777,20 @@ export default function ReviewerProposalViewContent({
 												<p className="text-sm text-gray-300 whitespace-pre-wrap">
 													{version.resourcePersonDetails}
 												</p>
+												<div className="text-sm text-gray-300 mt-1">
+													{version.isResourcePersonPaid ? (
+														<span className="flex items-center text-yellow-400">
+															Will be paid:
+															<IndianRupee
+																size={14}
+																className="ml-1.5 mr-0.5"
+															/>
+															{version.resourcePersonPayment || 0}
+														</span>
+													) : (
+														"Will not be paid"
+													)}
+												</div>
 											</div>
 										)}
 

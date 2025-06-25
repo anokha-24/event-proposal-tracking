@@ -39,9 +39,12 @@ export default function EditProposalContent({ proposalId, onBack }) {
 			day2: "",
 			day3: "",
 		},
-		estimatedBudget: "",
+		expectedIncome: "",
+		expectedExpense: "",
 		potentialFundingSource: "",
 		resourcePersonDetails: "",
+		isResourcePersonPaid: false,
+		resourcePersonPayment: "",
 		externalResources: "",
 		additionalRequirements: "nil",
 		targetAudience: "",
@@ -131,6 +134,10 @@ export default function EditProposalContent({ proposalId, onBack }) {
 				setProposal({
 					...proposalThread,
 					id: proposalId,
+					expectedIncome: proposalThread.expectedIncome || 0,
+					expectedExpense: proposalThread.expectedExpense || proposalThread.estimatedBudget || 0,
+					isResourcePersonPaid: proposalThread.isResourcePersonPaid || false,
+					resourcePersonPayment: proposalThread.resourcePersonPayment || 0,
 					additionalRequirements:
 						proposalThread.additionalRequirements || "nil",
 					targetAudience: proposalThread.targetAudience || "",
@@ -570,6 +577,62 @@ export default function EditProposalContent({ proposalId, onBack }) {
 						</div>
 
 						<div>
+							<label className="block text-sm font-medium mb-2">
+								Will the resource person be paid? *
+							</label>
+							<div className="flex items-center space-x-4">
+								<label className="inline-flex items-center">
+									<input
+										type="radio"
+										name="isResourcePersonPaid"
+										checked={proposal.isResourcePersonPaid === true}
+										onChange={() =>
+											setProposal((prev) => ({
+												...prev,
+												isResourcePersonPaid: true,
+											}))
+										}
+										className="form-radio"
+									/>
+									<span className="ml-2">Yes</span>
+								</label>
+								<label className="inline-flex items-center">
+									<input
+										type="radio"
+										name="isResourcePersonPaid"
+										checked={proposal.isResourcePersonPaid === false}
+										onChange={() =>
+											setProposal((prev) => ({
+												...prev,
+												isResourcePersonPaid: false,
+												resourcePersonPayment: 0,
+											}))
+										}
+										className="form-radio"
+									/>
+									<span className="ml-2">No</span>
+								</label>
+							</div>
+						</div>
+
+						{proposal.isResourcePersonPaid && (
+							<div>
+								<label className="block text-sm font-medium mb-1">
+									Payment Amount (₹) *
+								</label>
+								<input
+									type="number"
+									name="resourcePersonPayment"
+									value={proposal.resourcePersonPayment || ""}
+									onChange={handleChange}
+									min="0"
+									className="w-full p-2 bg-gray-700 border border-gray-600 rounded-md text-white"
+									required
+								/>
+							</div>
+						)}
+
+						<div>
 							<label className="block text-sm font-medium mb-1">
 								External Resources Required *
 							</label>
@@ -811,12 +874,27 @@ export default function EditProposalContent({ proposalId, onBack }) {
 					<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 						<div>
 							<label className="block text-sm font-medium mb-1">
-								Estimated Budget (₹) *
+								Expected Income (₹) *
 							</label>
 							<input
 								type="number"
-								name="estimatedBudget"
-								value={proposal.estimatedBudget || ""}
+								name="expectedIncome"
+								value={proposal.expectedIncome || ""}
+								onChange={handleChange}
+								min="0"
+								className="w-full p-2 bg-gray-700 border border-gray-600 rounded-md text-white"
+								required
+							/>
+						</div>
+
+						<div>
+							<label className="block text-sm font-medium mb-1">
+								Expected Expense (₹) *
+							</label>
+							<input
+								type="number"
+								name="expectedExpense"
+								value={proposal.expectedExpense || ""}
 								onChange={handleChange}
 								min="0"
 								className="w-full p-2 bg-gray-700 border border-gray-600 rounded-md text-white"
