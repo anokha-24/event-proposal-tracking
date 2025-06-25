@@ -24,11 +24,7 @@ const getProposalHistory = async (proposalId) => {
 		const querySnapshot = await getDocs(q);
 		return querySnapshot.docs.map((doc) => ({
 			id: doc.id,
-			version: doc.data().version,
-			comments: doc.data().comments || [],
-			replies: doc.data().replies || [],
-			updatedAt: doc.data().updatedAt,
-			updatedBy: doc.data().updatedBy,
+			...doc.data(),
 		}));
 	} catch (error) {
 		console.error("Error getting proposal history:", error);

@@ -31,6 +31,7 @@ import {
 	PenTool,
 	IndianRupee,
 	Users2,
+	History,
 } from "lucide-react";
 import apiRequest from "@/utils/apiRequest";
 import { ComboboxReviewer } from "@/components/ui/combo-box-reviewer";
@@ -53,9 +54,26 @@ export default function ReviewerProposalViewContent({
 	const [nextReviewers, setNextReviewers] = useState([]);
 	const [filteredReviewers, setFilteredReviewers] = useState([]);
 	const [selectedReviewer, setSelectedReviewer] = useState(null);
+	const [loadedVersions, setLoadedVersions] = useState({});
+	const [versionsLoading, setVersionsLoading] = useState({});
 
 	const commentInputRef = useRef(null);
 	const router = useRouter();
+
+	const loadMoreVersions = async (proposalId) => {
+		setVersionsLoading((prev) => ({ ...prev, [proposalId]: true }));
+
+		try {
+			setLoadedVersions((prev) => ({
+				...prev,
+				[proposalId]: (prev[proposalId] || 1) + 1,
+			}));
+		} catch (error) {
+			console.error("Error loading more versions:", error);
+		} finally {
+			setVersionsLoading((prev) => ({ ...prev, [proposalId]: false }));
+		}
+	};
 
 	useEffect(() => {
 		if (proposals.length === 1 && proposals[0].id === expandedProposal) {
@@ -96,12 +114,12 @@ export default function ReviewerProposalViewContent({
 					}
 
 					try {
-						const res = await apiRequest(`/api/proposal/${proposalId}`, "GET");
-						const proposal = res.proposal;
+						const proposal = await apiRequest(`/api/proposal/${proposalId}/history`, "GET");
 
 						if (proposal) {
 							setProposals([proposal]);
-							setExpandedProposal(proposal.id); // Auto-expand the single proposal
+							setExpandedProposal(proposal.id);
+							setLoadedVersions({ [proposal.id]: 1 });
 						} else {
 							setError(`Proposal with ID ${proposalId} not found.`);
 							setProposals([]);
@@ -112,7 +130,6 @@ export default function ReviewerProposalViewContent({
 					}
 				};
 
-				// First check session storage for values from the login page
 				const sessionAuth = sessionStorage.getItem("auth");
 				const isUser = sessionStorage.getItem("user");
 				const role = sessionStorage.getItem("role");
@@ -129,9 +146,7 @@ export default function ReviewerProposalViewContent({
 					console.error("Error parsing departments:", e);
 				}
 
-				// Check if user is already authenticated via session storage
 				if (isUser === "true" && role && role.toLowerCase() === "reviewer") {
-					// Create reviewer data from session storage
 					const reviewerData = {
 						uid: user.uid,
 						email: user.email,
@@ -146,7 +161,6 @@ export default function ReviewerProposalViewContent({
 					return;
 				}
 
-				// Fallback to Firestore check if session storage doesn't have valid data
 				const reviewerRef = doc(db, "Reviewers", user.uid);
 				const reviewerDoc = await getDoc(reviewerRef);
 
@@ -158,7 +172,6 @@ export default function ReviewerProposalViewContent({
 
 				const reviewerData = reviewerDoc.data();
 
-				// Process departments properly
 				let userDepartments = reviewerData.department || [];
 				if (!Array.isArray(userDepartments)) {
 					userDepartments =
@@ -173,16 +186,14 @@ export default function ReviewerProposalViewContent({
 					);
 				}
 
-				// Prepare session data with standardized role
 				const authSession = {
 					authenticated: true,
 					name: reviewerData.name || "Reviewer",
-					role: "Reviewer", // Standardized to capital R
+					role: "Reviewer",
 					departments: userDepartments,
 					level: reviewerData.level,
 				};
 
-				// Set both auth formats in session storage for compatibility
 				sessionStorage.setItem("auth", JSON.stringify(authSession));
 				sessionStorage.setItem("user", "true");
 				sessionStorage.setItem("role", "Reviewer");
@@ -190,7 +201,6 @@ export default function ReviewerProposalViewContent({
 				sessionStorage.setItem("departments", JSON.stringify(userDepartments));
 				sessionStorage.setItem("level", reviewerData.level);
 
-				// Set reviewer data
 				const fullReviewerData = {
 					uid: user.uid,
 					email: user.email,
@@ -242,27 +252,22 @@ export default function ReviewerProposalViewContent({
 	}, [reviewer]);
 
 	const CommentItem = ({ comment, reviewer, version }) => {
-		// Explicitly determine if this is a reviewer comment or user comment
 		const isReviewerComment = Boolean(comment.reviewerName);
 		const isUserComment = Boolean(comment.authorName || comment.authorType);
 
-		// Get appropriate name and set proper styling based on comment type
 		let displayName = "Unknown";
 		let borderColor = "border-gray-500";
 		let nameColor = "text-gray-400";
 
 		if (isReviewerComment) {
-			// This is a reviewer comment
 			displayName = comment.reviewerName;
 			borderColor = "border-blue-500";
 			nameColor = "text-blue-400";
 
-			// Check if this is from the current reviewer
 			if (comment.reviewerName === (reviewer?.displayName || reviewer?.name)) {
 				displayName = "You";
 			}
 		} else if (isUserComment) {
-			// This is a user/proposer comment
 			displayName = comment.authorName || "User";
 			borderColor = "border-green-500";
 			nameColor = "text-green-400";
@@ -305,7 +310,6 @@ export default function ReviewerProposalViewContent({
 	};
 
 	const handleSubmitReview = async (proposalId) => {
-		// console.log("Reviewer: ", reviewer);
 		if (
 			!reviewComment.trim() ||
 			(reviewStatus === "Approved" && reviewer.level < 1 && !selectedReviewer)
@@ -332,8 +336,6 @@ export default function ReviewerProposalViewContent({
 					alert("Reviewer not found in nextReviewers list.");
 					return;
 				}
-				// console.log(fullReviewer);
-				// Case: Forward to next reviewer
 				await apiRequest(`/api/proposal/${proposalId}/forward`, {
 					method: "POST",
 					body: JSON.stringify({
@@ -357,7 +359,6 @@ export default function ReviewerProposalViewContent({
 					},
 				});
 
-				// Update frontend state
 				setProposals((prevProposals) =>
 					prevProposals.map((proposal) =>
 						proposal.id === proposalId
@@ -390,10 +391,8 @@ export default function ReviewerProposalViewContent({
 					),
 				);
 			} else if (reviewStatus === "Approved") {
-				// Case: Level 2 or 3 reviewer approving without selecting next reviewer
-				// Forward to next level with empty reviewer details
 				const nextLevel = parseInt(reviewer.level) + 1;
-				const isFinalApproval = reviewer.level == 3; // Level 3 is final approval
+				const isFinalApproval = reviewer.level == 3;
 
 				await apiRequest(`/api/proposal/${proposalId}/forward`, {
 					method: "POST",
@@ -418,7 +417,6 @@ export default function ReviewerProposalViewContent({
 					},
 				});
 
-				// Update frontend state
 				const newStatus = isFinalApproval ? "approved" : "pending";
 
 				setProposals((prevProposals) =>
@@ -427,7 +425,7 @@ export default function ReviewerProposalViewContent({
 							? {
 								...proposal,
 								status: newStatus,
-								currentReviewer: isFinalApproval ? "" : "", // Empty for next level
+								currentReviewer: isFinalApproval ? "" : "",
 								reviewerHistory: [
 									...(proposal.reviewerHistory || []),
 									{
@@ -453,7 +451,6 @@ export default function ReviewerProposalViewContent({
 					),
 				);
 			} else {
-				// Case: Final decision (Reviewed / Rejected etc)
 				await apiRequest(`/api/proposal/${proposalId}/status`, {
 					method: "PUT",
 					body: JSON.stringify({
@@ -551,23 +548,531 @@ export default function ReviewerProposalViewContent({
 		if (!timestamp) return "No date";
 
 		try {
-			// For Firestore timestamps with seconds property
 			if (timestamp.seconds) {
 				return new Date(timestamp.seconds * 1000).toLocaleString();
 			}
 
-			// For Firestore timestamps with toDate method
 			if (typeof timestamp.toDate === "function") {
 				return timestamp.toDate().toLocaleString();
 			}
 
-			// For ISO strings or other date formats
 			const date = new Date(timestamp);
 			return !isNaN(date.getTime()) ? date.toLocaleString() : "Invalid date";
 		} catch (error) {
 			console.error("Error formatting timestamp:", error);
 			return "Invalid date";
 		}
+	};
+
+	const renderVersionDetails = (proposal) => {
+		if (!proposal.versionDetails || proposal.versionDetails.length === 0) {
+			return (
+				<div className="text-sm text-gray-400 py-4">
+					No version history available for this proposal.
+				</div>
+			);
+		}
+
+		const versionsToDisplay = proposal.versionDetails.slice(
+			0,
+			loadedVersions[proposal.id] || 1,
+		);
+
+		return (
+			<div className="space-y-8">
+				{versionsToDisplay.map((version, index) => (
+					<div
+						key={index}
+						className="bg-gray-900/50 rounded-lg p-4 border border-gray-700"
+					>
+						<div className="flex flex-col md:flex-row md:justify-between md:items-start mb-4 gap-2">
+							<h3 className="font-medium text-lg text-white flex items-center gap-2">
+								<History size={20} />
+								Version {version.version}
+								{index === 0 && (
+									<span className="text-xs font-normal text-blue-400">
+										(Latest)
+									</span>
+								)}
+							</h3>
+							<div className="flex flex-col sm:flex-row sm:items-center sm:gap-2 gap-1">
+								{getStatusBadge(version.status)}
+								<span className="text-xs text-gray-400 whitespace-nowrap">
+									{formatTimestamp(version.timestamp)}
+								</span>
+							</div>
+						</div>
+
+						<div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+							<div className="space-y-4 min-w-0">
+								<div className="mb-4">
+									<h4 className="text-sm font-medium text-gray-300 mb-2">
+										Update Remarks:
+									</h4>
+									<p className="text-sm text-gray-400 bg-gray-700 p-3 rounded break-words whitespace-pre-wrap">
+										{version.remarks || "No remarks provided"}
+									</p>
+								</div>
+
+								<div className="bg-gray-700 p-4 rounded">
+									<h4 className="text-sm font-medium text-gray-300 mb-3">
+										Proposal Details:
+									</h4>
+									<div className="space-y-3">
+										<div>
+											<h5 className="text-xs font-medium text-gray-400">
+												Title:
+											</h5>
+											<p className="text-sm text-gray-300 break-words">
+												{version.title || "No title provided"}
+											</p>
+										</div>
+										<div>
+											<h5 className="text-xs font-medium text-gray-400">
+												Description:
+											</h5>
+											<p className="text-sm text-gray-400 break-words whitespace-pre-wrap">
+												{version.description || "No description provided"}
+											</p>
+										</div>
+									</div>
+								</div>
+								
+								<div className="bg-gray-700 p-4 rounded">
+									<h4 className="text-sm font-medium text-gray-300 mb-3">
+										Key Information:
+									</h4>
+
+									<div className="space-y-3">
+										{version.objectives && (
+											<div className="break-words">
+												<h5 className="text-xs font-medium text-gray-400">
+													Objectives:
+												</h5>
+												<p className="text-sm text-gray-300 whitespace-pre-wrap">
+													{version.objectives}
+												</p>
+											</div>
+										)}
+
+										{version.outcomes && (
+											<div className="break-words">
+												<h5 className="text-xs font-medium text-gray-400">
+													Expected Outcomes:
+												</h5>
+												<p className="text-sm text-gray-300 whitespace-pre-wrap">
+													{version.outcomes}
+												</p>
+											</div>
+										)}
+
+										{version.participantEngagement && (
+											<div className="break-words">
+												<h5 className="text-xs font-medium text-gray-400">
+													Participant Engagement:
+												</h5>
+												<p className="text-sm text-gray-300 whitespace-pre-wrap">
+													{version.participantEngagement}
+												</p>
+											</div>
+										)}
+									</div>
+								</div>
+
+								<div className="bg-gray-700 p-4 rounded">
+									<h4 className="text-sm font-medium text-gray-300 mb-3">
+										Additional Information:
+									</h4>
+
+									<div className="grid grid-cols-1 gap-3">
+										{version.targetAudience && (
+											<div className="col-span-1 break-words">
+												<h5 className="text-xs font-medium text-gray-400 flex items-center gap-1">
+													<Target size={14} /> Target Audience
+												</h5>
+												<p className="text-sm text-gray-300 whitespace-pre-wrap">
+													{version.targetAudience}
+												</p>
+											</div>
+										)}
+
+										{version.duration && (
+											<div className="break-words">
+												<h5 className="text-xs font-medium text-gray-400">
+													Duration:
+												</h5>
+												<p className="text-sm text-gray-300 whitespace-pre-wrap">
+													{version.duration}
+												</p>
+											</div>
+										)}
+
+										{version.registrationFee !== undefined && (
+											<div className="break-words">
+												<h5 className="text-xs font-medium text-gray-400">
+													Registration Fee:
+												</h5>
+												<p className="text-sm text-gray-300 whitespace-pre-wrap flex items-center">
+													<IndianRupee size={14} className="mr-1" />
+													{version.registrationFee || "Free"}
+												</p>
+											</div>
+										)}
+
+										{version.maxSeats && (
+											<div className="break-words">
+												<h5 className="text-xs font-medium text-gray-400">
+													Maximum Seats:
+												</h5>
+												<p className="text-sm text-gray-300 whitespace-pre-wrap">
+													{version.maxSeats}
+												</p>
+											</div>
+										)}
+
+										{version.estimatedBudget && (
+											<div className="break-words">
+												<h5 className="text-xs font-medium text-gray-400">
+													Estimated Budget:
+												</h5>
+												<p className="text-sm text-gray-300 whitespace-pre-wrap flex items-center">
+													<IndianRupee size={14} className="mr-1" />
+													{version.estimatedBudget}
+												</p>
+											</div>
+										)}
+
+										{version.potentialFundingSource && (
+											<div className="break-words">
+												<h5 className="text-xs font-medium text-gray-400">
+													Funding Source:
+												</h5>
+												<p className="text-sm text-gray-300 whitespace-pre-wrap">
+													{version.potentialFundingSource}
+												</p>
+											</div>
+										)}
+
+										{version.resourcePersonDetails && (
+											<div className="break-words">
+												<h5 className="text-xs font-medium text-gray-400">
+													Resource Person:
+												</h5>
+												<p className="text-sm text-gray-300 whitespace-pre-wrap">
+													{version.resourcePersonDetails}
+												</p>
+											</div>
+										)}
+
+										{version.externalResources && (
+											<div className="break-words">
+												<h5 className="text-xs font-medium text-gray-400">
+													External Resources:
+												</h5>
+												<p className="text-sm text-gray-300 whitespace-pre-wrap">
+													{version.externalResources}
+												</p>
+											</div>
+										)}
+
+										{version.additionalRequirements && (
+											<div className="col-span-1 break-words">
+												<h5 className="text-xs font-medium text-gray-400">
+													Additional Requirements:
+												</h5>
+												<p className="text-sm text-gray-300 whitespace-pre-wrap">
+													{version.additionalRequirements}
+												</p>
+											</div>
+										)}
+
+										{!version.isIndividual && version.groupDetails && (
+											<div className="col-span-1 break-words bg-gray-800 p-3 rounded">
+												<h5 className="text-xs font-medium text-gray-400 flex items-center gap-1">
+													<Users2 size={14} /> Group Registration
+													Details
+												</h5>
+												<div className="grid grid-cols-2 gap-2 mt-2">
+													<div>
+														<p className="text-xs text-gray-500">
+															Max Members:
+														</p>
+														<p className="text-sm text-gray-300">
+															{version.groupDetails.maxGroupMembers ||
+																"Not specified"}
+														</p>
+													</div>
+													<div>
+														<p className="text-xs text-gray-500">
+															Fee Type:
+														</p>
+														<p className="text-sm text-gray-300 capitalize">
+															{version.groupDetails.feeType ===
+																"perhead"
+																? "Per Head"
+																: "Per Group"}
+														</p>
+													</div>
+												</div>
+											</div>
+										)}
+
+										{version.preferredDays && (
+											<div className="col-span-1 break-words bg-gray-800 p-3 rounded">
+												<h5 className="text-xs font-medium text-gray-400 flex items-center gap-1">
+													<Calendar size={14} /> Preferred Schedule
+												</h5>
+												<div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-2">
+													{version.preferredDays.day1 && (
+														<div>
+															<p className="text-xs text-gray-500">
+																Day 1:
+															</p>
+															<p className="text-sm text-gray-300">
+																{version.preferredDays.day1}
+															</p>
+														</div>
+													)}
+													{version.preferredDays.day2 && (
+														<div>
+															<p className="text-xs text-gray-500">
+																Day 2:
+															</p>
+															<p className="text-sm text-gray-300">
+																{version.preferredDays.day2}
+															</p>
+														</div>
+													)}
+													{version.preferredDays.day3 && (
+														<div>
+															<p className="text-xs text-gray-500">
+																Day 3:
+															</p>
+															<p className="text-sm text-gray-300">
+																{version.preferredDays.day3}
+															</p>
+														</div>
+													)}
+												</div>
+											</div>
+										)}
+
+										<div className="col-span-1 break-words">
+											<h5 className="text-xs font-medium text-gray-400">
+												Event Details:
+											</h5>
+											<div className="flex flex-wrap gap-2 mt-1">
+												{version.isEvent !== undefined && (
+													<span className="px-2 py-0.5 bg-gray-600 text-gray-300 text-xs rounded-full whitespace-nowrap">
+														{version.isEvent ? "Event" : "Workshop"}
+													</span>
+												)}
+												{version.isTechnical !== undefined && (
+													<span className="px-2 py-0.5 bg-gray-600 text-gray-300 text-xs rounded-full whitespace-nowrap">
+														{version.isTechnical
+															? "Technical"
+															: "Non-Technical"}
+													</span>
+												)}
+												{version.isIndividual !== undefined && (
+													<span className="px-2 py-0.5 bg-gray-600 text-gray-300 text-xs rounded-full whitespace-nowrap">
+														{version.isIndividual
+															? "Individual"
+															: "Group"}
+													</span>
+												)}
+											</div>
+										</div>
+									</div>
+								</div>
+							</div>
+
+							<div className="space-y-4 min-w-0">
+								<div>
+									<h4 className="text-sm font-medium text-gray-300 mb-2 flex items-center">
+										<MessageSquare
+											size={16}
+											className="mr-1 flex-shrink-0"
+										/>
+										<span>
+											{index === 0
+												? "Discussion"
+												: `Discussion for Version ${version.version}`}
+										</span>
+									</h4>
+
+									<div className="bg-gray-700 p-4 rounded max-h-96 overflow-y-auto space-y-3">
+										{version.comments &&
+											version.comments.length > 0 ? (
+											[...version.comments]
+												.sort((a, b) => {
+													const timeA = a.timestamp?.seconds ? a.timestamp.seconds * 1000 : new Date(a.timestamp).getTime();
+													const timeB = b.timestamp?.seconds ? b.timestamp.seconds * 1000 : new Date(b.timestamp).getTime();
+													return timeA - timeB;
+												})
+												.map((comment, idx) => (
+													<CommentItem
+														key={`v${version.version}-${idx}`}
+														comment={comment}
+														reviewer={reviewer}
+														version={version.version}
+													/>
+												))
+										) : (
+											<p className="text-sm text-gray-500 italic break-words">
+												No comments for this version.
+											</p>
+										)}
+									</div>
+								</div>
+
+								{index === 0 && ((proposal.currentReviewer?.reviewerId === reviewer?.uid) || (reviewer?.level === 2)) && (
+									<div className="bg-gray-700 p-4 rounded">
+										<h4 className="text-sm font-medium text-gray-300 mb-3 flex items-center">
+											<PenTool size={16} className="mr-1 flex-shrink-0" />
+											<span>Add Review:</span>
+										</h4>
+
+										<div className="space-y-3">
+											<div>
+												<label className="block text-xs font-medium text-gray-400 mb-1">
+													Review Status:
+												</label>
+												<div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+													<button
+														type="button"
+														className={`flex items-center justify-center px-3 py-2 rounded-md text-sm ${reviewStatus === "Reviewed"
+																? "bg-blue-700 text-white"
+																: "bg-gray-600 text-gray-300 hover:bg-gray-500"
+															} whitespace-nowrap`}
+														onClick={() => setReviewStatus("Reviewed")}
+													>
+														<RefreshCw
+															size={14}
+															className="mr-1 flex-shrink-0"
+														/>
+														<span>Request Changes</span>
+													</button>
+
+													<button
+														type="button"
+														className={`flex items-center justify-center px-3 py-2 rounded-md text-sm ${reviewStatus === "Approved"
+																? "bg-green-700 text-white"
+																: "bg-gray-600 text-gray-300 hover:bg-gray-500"
+															} whitespace-nowrap`}
+														onClick={() => setReviewStatus("Approved")}
+													>
+														<ThumbsUp
+															size={14}
+															className="mr-1 flex-shrink-0"
+														/>
+														<span>{"Approve"}</span>
+													</button>
+
+													<button
+														type="button"
+														className={`flex items-center justify-center px-3 py-2 rounded-md text-sm ${reviewStatus === "Rejected"
+																? "bg-red-700 text-white"
+																: "bg-gray-600 text-gray-300 hover:bg-gray-500"
+															} whitespace-nowrap`}
+														onClick={() => setReviewStatus("Rejected")}
+													>
+														<ThumbsDown
+															size={14}
+															className="mr-1 flex-shrink-0"
+														/>
+														<span>Reject</span>
+													</button>
+												</div>
+											</div>
+
+											{reviewStatus == "Approved" && reviewer.level < 1 && (
+												<div className="p-6 bg-gray-800 rounded-lg shadow-md">
+													<label className="block text-xs font-medium text-gray-400 mb-1">
+														Select next reviewer
+													</label>
+
+													<ComboboxReviewer
+														options={filteredReviewers.map((r) => ({
+															value: r.id,
+															label: `${r.name} - [ ${r.email} ]`,
+														}))}
+														selected={selectedReviewer}
+														setSelected={setSelectedReviewer}
+													/>
+												</div>
+											)}
+
+											<div>
+												<label className="block text-xs font-medium text-gray-400 mb-1">
+													Review Comment:
+												</label>
+												<Textarea
+													ref={commentInputRef}
+													value={reviewComment}
+													onChange={(e) =>
+														setReviewComment(e.target.value)
+													}
+													placeholder="Enter your review comments here..."
+													className="w-full p-3 bg-gray-800 border border-gray-600 rounded-md text-white text-sm min-h-24 break-words whitespace-pre-wrap"
+													required
+												/>
+												<p className="text-xs text-gray-500 mt-1 break-words">
+													Please provide detailed feedback, especially if
+													rejecting or requesting changes.
+												</p>
+											</div>
+
+											<div className="pt-2">
+												<button
+													type="button"
+													onClick={() => handleSubmitReview(proposal.id)}
+													disabled={
+														isSubmitting ||
+														!reviewComment.trim() ||
+														(reviewStatus === "Approved" &&
+															reviewer?.level < 1 &&
+															!selectedReviewer)
+													}
+													className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded-md py-2 flex items-center justify-center gap-2 transition whitespace-nowrap"
+												>
+													{isSubmitting ? (
+														<>
+															<div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full flex-shrink-0"></div>
+															<span>Submitting...</span>
+														</>
+													) : (
+														<>
+															<Send size={16} className="flex-shrink-0" />
+															<span>Submit Review</span>
+														</>
+													)}
+												</button>
+											</div>
+										</div>
+									</div>
+								)}
+							</div>
+						</div>
+					</div>
+				))}
+
+				{proposal.versionDetails.length > (loadedVersions[proposal.id] || 1) && (
+					<div className="text-center mt-4">
+						<button
+							onClick={() => loadMoreVersions(proposal.id)}
+							disabled={versionsLoading[proposal.id]}
+							className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-md text-sm flex items-center justify-center mx-auto disabled:opacity-70 disabled:cursor-not-allowed"
+						>
+							<History size={16} className="mr-2" />
+							{versionsLoading[proposal.id]
+								? "Loading..."
+								: "Load Previous Version"}
+						</button>
+					</div>
+				)}
+			</div>
+		);
 	};
 
 	if (loading) {
@@ -702,483 +1207,7 @@ export default function ReviewerProposalViewContent({
 
 							{expandedProposal === proposal.id && (
 								<div className="border-t border-gray-700 p-4">
-									<div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-										<div className="space-y-4 min-w-0">
-											<div>
-												<h4 className="text-sm font-medium text-gray-300 mb-2">
-													Description:
-												</h4>
-												<p className="text-sm text-gray-400 bg-gray-700 p-3 rounded break-words whitespace-pre-wrap">
-													{proposal.description || "No description provided"}
-												</p>
-											</div>
-
-											<div className="bg-gray-700 p-4 rounded">
-												<h4 className="text-sm font-medium text-gray-300 mb-3">
-													Key Information:
-												</h4>
-
-												<div className="space-y-3">
-													{proposal.objectives && (
-														<div className="break-words">
-															<h5 className="text-xs font-medium text-gray-400">
-																Objectives:
-															</h5>
-															<p className="text-sm text-gray-300 whitespace-pre-wrap">
-																{proposal.objectives}
-															</p>
-														</div>
-													)}
-
-													{proposal.outcomes && (
-														<div className="break-words">
-															<h5 className="text-xs font-medium text-gray-400">
-																Expected Outcomes:
-															</h5>
-															<p className="text-sm text-gray-300 whitespace-pre-wrap">
-																{proposal.outcomes}
-															</p>
-														</div>
-													)}
-
-													{proposal.participantEngagement && (
-														<div className="break-words">
-															<h5 className="text-xs font-medium text-gray-400">
-																Participant Engagement:
-															</h5>
-															<p className="text-sm text-gray-300 whitespace-pre-wrap">
-																{proposal.participantEngagement}
-															</p>
-														</div>
-													)}
-												</div>
-											</div>
-
-											<div className="bg-gray-700 p-4 rounded">
-												<h4 className="text-sm font-medium text-gray-300 mb-3">
-													Additional Information:
-												</h4>
-
-												<div className="grid grid-cols-1 gap-3">
-													{proposal.targetAudience && (
-														<div className="col-span-1 break-words">
-															<h5 className="text-xs font-medium text-gray-400 flex items-center gap-1">
-																<Target size={14} /> Target Audience
-															</h5>
-															<p className="text-sm text-gray-300 whitespace-pre-wrap">
-																{proposal.targetAudience}
-															</p>
-														</div>
-													)}
-
-													{proposal.duration && (
-														<div className="break-words">
-															<h5 className="text-xs font-medium text-gray-400">
-																Duration:
-															</h5>
-															<p className="text-sm text-gray-300 whitespace-pre-wrap">
-																{proposal.duration}
-															</p>
-														</div>
-													)}
-
-													{proposal.registrationFee !== undefined && (
-														<div className="break-words">
-															<h5 className="text-xs font-medium text-gray-400">
-																Registration Fee:
-															</h5>
-															<p className="text-sm text-gray-300 whitespace-pre-wrap flex items-center">
-																<IndianRupee size={14} className="mr-1" />
-																{proposal.registrationFee || "Free"}
-															</p>
-														</div>
-													)}
-
-													{proposal.maxSeats && (
-														<div className="break-words">
-															<h5 className="text-xs font-medium text-gray-400">
-																Maximum Seats:
-															</h5>
-															<p className="text-sm text-gray-300 whitespace-pre-wrap">
-																{proposal.maxSeats}
-															</p>
-														</div>
-													)}
-
-													{proposal.estimatedBudget && (
-														<div className="break-words">
-															<h5 className="text-xs font-medium text-gray-400">
-																Estimated Budget:
-															</h5>
-															<p className="text-sm text-gray-300 whitespace-pre-wrap flex items-center">
-																<IndianRupee size={14} className="mr-1" />
-																{proposal.estimatedBudget}
-															</p>
-														</div>
-													)}
-
-													{proposal.potentialFundingSource && (
-														<div className="break-words">
-															<h5 className="text-xs font-medium text-gray-400">
-																Funding Source:
-															</h5>
-															<p className="text-sm text-gray-300 whitespace-pre-wrap">
-																{proposal.potentialFundingSource}
-															</p>
-														</div>
-													)}
-
-													{proposal.resourcePersonDetails && (
-														<div className="break-words">
-															<h5 className="text-xs font-medium text-gray-400">
-																Resource Person:
-															</h5>
-															<p className="text-sm text-gray-300 whitespace-pre-wrap">
-																{proposal.resourcePersonDetails}
-															</p>
-														</div>
-													)}
-
-													{proposal.externalResources && (
-														<div className="break-words">
-															<h5 className="text-xs font-medium text-gray-400">
-																External Resources:
-															</h5>
-															<p className="text-sm text-gray-300 whitespace-pre-wrap">
-																{proposal.externalResources}
-															</p>
-														</div>
-													)}
-
-													{proposal.additionalRequirements && (
-														<div className="col-span-1 break-words">
-															<h5 className="text-xs font-medium text-gray-400">
-																Additional Requirements:
-															</h5>
-															<p className="text-sm text-gray-300 whitespace-pre-wrap">
-																{proposal.additionalRequirements}
-															</p>
-														</div>
-													)}
-
-													{/* Group Details Section */}
-													{!proposal.isIndividual && proposal.groupDetails && (
-														<div className="col-span-1 break-words bg-gray-800 p-3 rounded">
-															<h5 className="text-xs font-medium text-gray-400 flex items-center gap-1">
-																<Users2 size={14} /> Group Registration
-																Details
-															</h5>
-															<div className="grid grid-cols-2 gap-2 mt-2">
-																<div>
-																	<p className="text-xs text-gray-500">
-																		Max Members:
-																	</p>
-																	<p className="text-sm text-gray-300">
-																		{proposal.groupDetails.maxGroupMembers ||
-																			"Not specified"}
-																	</p>
-																</div>
-																<div>
-																	<p className="text-xs text-gray-500">
-																		Fee Type:
-																	</p>
-																	<p className="text-sm text-gray-300 capitalize">
-																		{proposal.groupDetails.feeType ===
-																			"perhead"
-																			? "Per Head"
-																			: "Per Group"}
-																	</p>
-																</div>
-															</div>
-														</div>
-													)}
-
-													{/* Preferred Days Section */}
-													{proposal.preferredDays && (
-														<div className="col-span-1 break-words bg-gray-800 p-3 rounded">
-															<h5 className="text-xs font-medium text-gray-400 flex items-center gap-1">
-																<Calendar size={14} /> Preferred Schedule
-															</h5>
-															<div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-2">
-																{proposal.preferredDays.day1 && (
-																	<div>
-																		<p className="text-xs text-gray-500">
-																			Day 1:
-																		</p>
-																		<p className="text-sm text-gray-300">
-																			{proposal.preferredDays.day1}
-																		</p>
-																	</div>
-																)}
-																{proposal.preferredDays.day2 && (
-																	<div>
-																		<p className="text-xs text-gray-500">
-																			Day 2:
-																		</p>
-																		<p className="text-sm text-gray-300">
-																			{proposal.preferredDays.day2}
-																		</p>
-																	</div>
-																)}
-																{proposal.preferredDays.day3 && (
-																	<div>
-																		<p className="text-xs text-gray-500">
-																			Day 3:
-																		</p>
-																		<p className="text-sm text-gray-300">
-																			{proposal.preferredDays.day3}
-																		</p>
-																	</div>
-																)}
-															</div>
-														</div>
-													)}
-
-													{/* Event Type Badges */}
-													<div className="col-span-1 break-words">
-														<h5 className="text-xs font-medium text-gray-400">
-															Event Details:
-														</h5>
-														<div className="flex flex-wrap gap-2 mt-1">
-															{proposal.isEvent !== undefined && (
-																<span className="px-2 py-0.5 bg-gray-600 text-gray-300 text-xs rounded-full whitespace-nowrap">
-																	{proposal.isEvent ? "Event" : "Workshop"}
-																</span>
-															)}
-															{proposal.isTechnical !== undefined && (
-																<span className="px-2 py-0.5 bg-gray-600 text-gray-300 text-xs rounded-full whitespace-nowrap">
-																	{proposal.isTechnical
-																		? "Technical"
-																		: "Non-Technical"}
-																</span>
-															)}
-															{proposal.isIndividual !== undefined && (
-																<span className="px-2 py-0.5 bg-gray-600 text-gray-300 text-xs rounded-full whitespace-nowrap">
-																	{proposal.isIndividual
-																		? "Individual"
-																		: "Group"}
-																</span>
-															)}
-														</div>
-													</div>
-												</div>
-											</div>
-										</div>
-
-										<div className="space-y-4 min-w-0">
-											<div>
-												<h4 className="text-sm font-medium text-gray-300 mb-2 flex items-center">
-													<MessageSquare
-														size={16}
-														className="mr-1 flex-shrink-0"
-													/>
-													<span>All Comments:</span>
-												</h4>
-
-												<div className="bg-gray-700 p-4 rounded max-h-60 overflow-y-auto space-y-3">
-													{/* Current version comments */}
-													{proposal.comments &&
-														proposal.comments.length > 0 ? (
-														<>
-															<div className="text-xs text-gray-500 mb-2 px-2 py-1 bg-gray-800 rounded-full w-fit">
-																Current Version
-															</div>
-															{proposal.comments.map((comment, idx) => (
-																<CommentItem
-																	key={`current-${idx}`}
-																	comment={comment}
-																	reviewer={reviewer}
-																/>
-															))}
-														</>
-													) : null}
-
-													{/* Historical version comments */}
-													{proposal.history &&
-														proposal.history
-															.filter(
-																(version) =>
-																	version.comments &&
-																	version.comments.length > 0,
-															)
-															.sort((a, b) => {
-																// Sort by version number (newest first)
-																if (a.version && b.version) {
-																	return b.version - a.version;
-																}
-																// Fallback to timestamp if version is not available
-																const timeA = a.timestamp?.seconds
-																	? a.timestamp.seconds * 1000
-																	: a.timestamp
-																		? new Date(a.timestamp).getTime()
-																		: 0;
-																const timeB = b.timestamp?.seconds
-																	? b.timestamp.seconds * 1000
-																	: b.timestamp
-																		? new Date(b.timestamp).getTime()
-																		: 0;
-																return timeB - timeA;
-															})
-															.map((version) => (
-																<div key={`version-${version.version}`}>
-																	<div className="text-xs text-gray-500 mt-4 mb-2 px-2 py-1 bg-gray-800 rounded-full w-fit">
-																		Version {version.version} (
-																		{formatTimestamp(version.timestamp)})
-																	</div>
-																	{version.comments.map((comment, idx) => (
-																		<CommentItem
-																			key={`v${version.version}-${idx}`}
-																			comment={comment}
-																			reviewer={reviewer}
-																			version={version.version}
-																		/>
-																	))}
-																</div>
-															))}
-
-													{/* No comments message */}
-													{(!proposal.comments ||
-														proposal.comments.length === 0) &&
-														(!proposal.history ||
-															!proposal.history.some(
-																(v) =>
-																	v.comments && v.comments.length > 0,
-															)) && (
-															<p className="text-sm text-gray-500 italic break-words">
-																No comments found in the current version.
-															</p>
-														)}
-												</div>
-											</div>
-
-											{((proposal.currentReviewer?.reviewerId === reviewer?.uid) || (reviewer?.level === 2)) && (
-												<div className="bg-gray-700 p-4 rounded">
-													<h4 className="text-sm font-medium text-gray-300 mb-3 flex items-center">
-														<PenTool size={16} className="mr-1 flex-shrink-0" />
-														<span>Add Review:</span>
-													</h4>
-
-													<div className="space-y-3">
-														<div>
-															<label className="block text-xs font-medium text-gray-400 mb-1">
-																Review Status:
-															</label>
-															<div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-																<button
-																	type="button"
-																	className={`flex items-center justify-center px-3 py-2 rounded-md text-sm ${reviewStatus === "Reviewed"
-																			? "bg-blue-700 text-white"
-																			: "bg-gray-600 text-gray-300 hover:bg-gray-500"
-																		} whitespace-nowrap`}
-																	onClick={() => setReviewStatus("Reviewed")}
-																>
-																	<RefreshCw
-																		size={14}
-																		className="mr-1 flex-shrink-0"
-																	/>
-																	<span>Request Changes</span>
-																</button>
-
-																<button
-																	type="button"
-																	className={`flex items-center justify-center px-3 py-2 rounded-md text-sm ${reviewStatus === "Approved"
-																			? "bg-green-700 text-white"
-																			: "bg-gray-600 text-gray-300 hover:bg-gray-500"
-																		} whitespace-nowrap`}
-																	onClick={() => setReviewStatus("Approved")}
-																>
-																	<ThumbsUp
-																		size={14}
-																		className="mr-1 flex-shrink-0"
-																	/>
-																	<span>{"Approve"}</span>
-																</button>
-
-																<button
-																	type="button"
-																	className={`flex items-center justify-center px-3 py-2 rounded-md text-sm ${reviewStatus === "Rejected"
-																			? "bg-red-700 text-white"
-																			: "bg-gray-600 text-gray-300 hover:bg-gray-500"
-																		} whitespace-nowrap`}
-																	onClick={() => setReviewStatus("Rejected")}
-																>
-																	<ThumbsDown
-																		size={14}
-																		className="mr-1 flex-shrink-0"
-																	/>
-																	<span>Reject</span>
-																</button>
-															</div>
-														</div>
-
-														{reviewStatus == "Approved" && reviewer.level < 1 && (
-															<div className="p-6 bg-gray-800 rounded-lg shadow-md">
-																<label className="block text-xs font-medium text-gray-400 mb-1">
-																	Select next reviewer
-																</label>
-
-																<ComboboxReviewer
-																	options={filteredReviewers.map((r) => ({
-																		value: r.id,
-																		label: `${r.name} - [ ${r.email} ]`,
-																	}))}
-																	selected={selectedReviewer}
-																	setSelected={setSelectedReviewer}
-																/>
-															</div>
-														)}
-
-														<div>
-															<label className="block text-xs font-medium text-gray-400 mb-1">
-																Review Comment:
-															</label>
-															<Textarea
-																ref={commentInputRef}
-																value={reviewComment}
-																onChange={(e) =>
-																	setReviewComment(e.target.value)
-																}
-																placeholder="Enter your review comments here..."
-																className="w-full p-3 bg-gray-800 border border-gray-600 rounded-md text-white text-sm min-h-24 break-words whitespace-pre-wrap"
-																required
-															/>
-															<p className="text-xs text-gray-500 mt-1 break-words">
-																Please provide detailed feedback, especially if
-																rejecting or requesting changes.
-															</p>
-														</div>
-
-														<div className="pt-2">
-															<button
-																type="button"
-																onClick={() => handleSubmitReview(proposal.id)}
-																disabled={
-																	isSubmitting ||
-																	!reviewComment.trim() ||
-																	(reviewStatus === "Approved" &&
-																		reviewer?.level < 1 &&
-																		!selectedReviewer)
-																}
-																className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded-md py-2 flex items-center justify-center gap-2 transition whitespace-nowrap"
-															>
-																{isSubmitting ? (
-																	<>
-																		<div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full flex-shrink-0"></div>
-																		<span>Submitting...</span>
-																	</>
-																) : (
-																	<>
-																		<Send size={16} className="flex-shrink-0" />
-																		<span>Submit Review</span>
-																	</>
-																)}
-															</button>
-														</div>
-													</div>
-												</div>
-											)}
-										</div>
-									</div>
+									{renderVersionDetails(proposal)}
 								</div>
 							)}
 						</div>

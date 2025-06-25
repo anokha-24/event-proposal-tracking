@@ -20,21 +20,9 @@ import {
 	Layers,
 	Send,
 } from "lucide-react";
-import {
-	collection,
-	getDocs,
-	query,
-	where,
-	doc,
-	getDoc,
-	orderBy,
-	updateDoc,
-	arrayUnion,
-	serverTimestamp,
-} from "firebase/firestore";
 import { getAuth } from "firebase/auth";
-import { db } from "../../firebase/firebase";
 import { useRouter } from "next/navigation";
+import apiRequest from "@/utils/apiRequest";
 
 export default function ProposalTrackingContent({ proposalId, onBack }) {
 	const [proposals, setProposals] = useState([]);
@@ -81,7 +69,6 @@ export default function ProposalTrackingContent({ proposalId, onBack }) {
 		if (!newReply.trim()) return;
 
 		try {
-			const proposalRef = doc(db, "Proposals", proposalId);
 			const replyData = {
 				text: newReply,
 				timestamp: new Date(),
@@ -91,25 +78,17 @@ export default function ProposalTrackingContent({ proposalId, onBack }) {
 				version: proposals.find((p) => p.id === proposalId)?.version || 1,
 			};
 
-			await updateDoc(proposalRef, {
-				comments: arrayUnion(replyData),
-				updatedAt: serverTimestamp(),
-			});
+			await apiRequest(`/api/proposal/${proposalId}/reply`, {
+                method: 'POST',
+                body: JSON.stringify(replyData)
+            });
 
 			// Refresh the proposal data
-			const updatedProposal = await getDoc(proposalRef);
+			const updatedProposal = await apiRequest(`/api/proposal/${proposalId}/history`);
 			setProposals((prev) =>
 				prev.map((p) =>
 					p.id === proposalId
-						? {
-								...p,
-								comments: [...(p.comments || []), replyData],
-								versionDetails: p.versionDetails?.map((v, i) =>
-									i === 0
-										? { ...v, comments: [...(v.comments || []), replyData] }
-										: v,
-								),
-							}
+						? updatedProposal
 						: p,
 				),
 			);
@@ -135,114 +114,23 @@ export default function ProposalTrackingContent({ proposalId, onBack }) {
 
 				if (proposalId) {
 					setSingleProposalView(true);
-					const proposalRef = doc(db, "Proposals", proposalId);
-					const proposalSnap = await getDoc(proposalRef);
+					
+					const proposal = await apiRequest(`/api/proposal/${proposalId}/history`);
 
-					if (!proposalSnap.exists()) {
+					if (!proposal) {
 						setLoading(false);
 						return;
 					}
 
-					const proposalData = {
-						id: proposalSnap.id,
-						...proposalSnap.data(),
-						comments: proposalSnap.data().comments || [],
-					};
-
-					// Fetch version history
-					const historyQuery = query(
-						collection(db, "Proposals", proposalId, "History"),
-						orderBy("version", "desc"),
-					);
-					const historySnapshot = await getDocs(historyQuery);
-
-					let versionDetails = [];
-
-					historySnapshot.forEach((doc) => {
-						const historyData = doc.data();
-						versionDetails.push({
-							version: historyData.version || "1",
-							timestamp: historyData.updatedAt,
-							updatedBy: historyData.updatedBy || "System",
-							status: historyData.proposalThread?.status || "Reviewed",
-							remarks: historyData.remarks || "Proposal updated",
-							comments: historyData.comments || [],
-							...historyData.proposalThread,
-						});
-					});
-
-					// Add current version as the first item
-					versionDetails.unshift({
-						...proposalData,
-						version: proposalData.version || "1",
-						timestamp: proposalData.updatedAt || proposalData.createdAt,
-						updatedBy: proposalData.updatedBy || "You",
-						status: proposalData.status,
-						remarks: "Current version",
-						comments: proposalData.comments,
-					});
-
-					proposalData.versionDetails = versionDetails;
-					fetchedProposals = [proposalData];
+					fetchedProposals = [proposal];
 
 					setExpandedProposal(proposalId);
 					setLoadedVersions({ [proposalId]: 1 });
 				} else {
 					setSingleProposalView(false);
-					const proposalsRef = collection(db, "Proposals");
-					const q = query(
-						proposalsRef,
-						where("proposerId", "==", auth.currentUser.uid),
-					);
-					const querySnapshot = await getDocs(q);
 
-					const proposalPromises = querySnapshot.docs.map(async (doc) => {
-						const proposalData = {
-							id: doc.id,
-							...doc.data(),
-							comments: doc.data().comments || [],
-						};
-
-						// Fetch version history for each proposal
-						const historyQuery = query(
-							collection(db, "Proposals", doc.id, "History"),
-							orderBy("version", "desc"),
-						);
-						const historySnapshot = await getDocs(historyQuery);
-
-						let versionDetails = [];
-
-						historySnapshot.forEach((historyDoc) => {
-							const historyData = historyDoc.data();
-							versionDetails.push({
-								version: historyData.version || "1",
-								timestamp: historyData.updatedAt,
-								updatedBy: historyData.updatedBy || "System",
-								status: historyData.proposalThread?.status || "Reviewed",
-								remarks: historyData.remarks || "Proposal updated",
-								comments: historyData.comments || [],
-								...historyData.proposalThread,
-							});
-						});
-
-						// Add current version as the first item
-						versionDetails.unshift({
-							...proposalData,
-							version: proposalData.version || "1",
-							timestamp: proposalData.updatedAt || proposalData.createdAt,
-							updatedBy: proposalData.updatedBy || "You",
-							status: proposalData.status,
-							remarks: "Current version",
-							comments: proposalData.comments,
-						});
-
-						proposalData.versionDetails = versionDetails;
-						return proposalData;
-					});
-
-					fetchedProposals = await Promise.all(proposalPromises);
-
-					// Initialize loaded versions
+					fetchedProposals = await apiRequest(`/api/user/${auth.currentUser.uid}/proposals`);
+					
 					const initialLoadedVersions = {};
 					fetchedProposals.forEach((proposal) => {
 						initialLoadedVersions[proposal.id] = 1;

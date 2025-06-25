@@ -17,7 +17,8 @@ const SignIn = () => {
 	const [signInWithEmailAndPassword] = useSignInWithEmailAndPassword(auth);
 	const router = useRouter();
 
-	const handleSignIn = async () => {
+	const handleSignIn = async (e) => {
+		e.preventDefault();
 		if (!email || !password) {
 			setError("Email and Password are required!");
 			return;
@@ -126,51 +127,53 @@ const SignIn = () => {
 					/>
 					<h1 className="text-2xl font-semibold text-center mb-5">Login</h1>
 
-					{error && <p className="text-red-500 text-sm mb-3">{error}</p>}
+					<form onSubmit={handleSignIn}>
+						{error && <p className="text-red-500 text-sm mb-3">{error}</p>}
 
-					<div className="mb-4">
-						<label htmlFor="email" className="text-white mb-2 block">
-							Email
-						</label>
-						<Input
-							type="email"
-							id="email"
-							placeholder="Enter your Amrita Email"
-							value={email}
-							onChange={(e) => setEmail(e.target.value)}
-							className="bg-gray-800 border-gray-600 text-white"
-						/>
-					</div>
+						<div className="mb-4">
+							<label htmlFor="email" className="text-white mb-2 block">
+								Email
+							</label>
+							<Input
+								type="email"
+								id="email"
+								placeholder="Enter your Amrita Email"
+								value={email}
+								onChange={(e) => setEmail(e.target.value)}
+								className="bg-gray-800 border-gray-600 text-white"
+							/>
+						</div>
 
-					<div className="mb-4">
-						<label htmlFor="password" className="text-white mb-2 block">
-							Password
-						</label>
-						<PasswordInput
-							id="password"
-							placeholder="Enter your password"
-							value={password}
-							onChange={(e) => setPassword(e.target.value)}
-							className="bg-gray-800 border-gray-600 text-white"
-						/>
-					</div>
+						<div className="mb-4">
+							<label htmlFor="password" className="text-white mb-2 block">
+								Password
+							</label>
+							<PasswordInput
+								id="password"
+								placeholder="Enter your password"
+								value={password}
+								onChange={(e) => setPassword(e.target.value)}
+								className="bg-gray-800 border-gray-600 text-white"
+							/>
+						</div>
 
-					<div className="my-3 text-right pr-1">
-						<a
-							className="text-green-500 cursor-pointer hover:underline"
-							href="/reset"
+						<div className="my-3 text-right pr-1">
+							<a
+								className="text-green-500 cursor-pointer hover:underline"
+								href="/reset"
+							>
+								Forgot your Password?
+							</a>
+						</div>
+
+						<Button
+							type="submit"
+							className="w-full bg-green-600 hover:bg-green-500 text-white font-medium py-2 mt-2"
+							disabled={loading}
 						>
-							Forgot your Password?
-						</a>
-					</div>
-
-					<Button
-						onClick={handleSignIn}
-						className="w-full bg-green-600 hover:bg-green-500 text-white font-medium py-2 mt-2"
-						disabled={loading}
-					>
-						{loading ? "Logging in..." : "Login"}
-					</Button>
+							{loading ? "Logging in..." : "Login"}
+						</Button>
+					</form>
 
 					<p className="text-gray-400 text-sm mt-4 text-center">
 						Don't have an account?{" "}

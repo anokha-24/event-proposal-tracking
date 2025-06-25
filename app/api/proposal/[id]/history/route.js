@@ -8,34 +8,72 @@ import {
 	serverTimestamp,
 } from "firebase/firestore";
 import { db } from "@/app/firebase/firebase";
+import { getProposalById } from "../../../proposalService";
+import { getProposalHistory } from "../../../proposalHistoryService";
 
 /**
  * Get proposal history
  */
-export async function GET(_req, { params }) {
-	const proposalId = await params.id;
+export async function GET(request, { params }) {
+	const { id: proposalId } = await params;
+
 	try {
-		const q = query(
-			collection(db, "Proposals", proposalId, "History"),
-			orderBy("version", "desc"),
-		);
-		const snapshot = await getDocs(q);
+		const proposal = await getProposalById(proposalId);
 
-		const history = snapshot.docs.map((doc) => ({
-			id: doc.id,
-			version: doc.data().version,
-			comments: doc.data().comments || [],
-			replies: doc.data().replies || [],
-			updatedAt: doc.data().updatedAt,
-			updatedBy: doc.data().updatedBy,
-		}));
+		if (!proposal) {
+			return new NextResponse(
+				JSON.stringify({ error: "Proposal not found" }),
+				{
+					status: 404,
+					headers: { "Content-Type": "application/json" },
+				},
+			);
+		}
+		
+		const history = await getProposalHistory(proposal.id);
 
-		return NextResponse.json(history);
+		let versionDetails = [];
+
+		history.forEach((historyData) => {
+			versionDetails.push({
+				version: historyData.version || "1",
+				timestamp: historyData.updatedAt,
+				updatedBy: historyData.updatedBy || "System",
+				status: historyData.proposalThread?.status || "Reviewed",
+				remarks: historyData.remarks || "Proposal updated",
+				comments: historyData.comments || [],
+				...historyData.proposalThread,
+			});
+		});
+
+		// Add current version as the first item
+		versionDetails.unshift({
+			...proposal,
+			version: proposal.version || "1",
+			timestamp: proposal.updatedAt || proposal.createdAt,
+			updatedBy: proposal.updatedBy || "You",
+			status: proposal.status,
+			remarks: "Current version",
+			comments: proposal.comments || [],
+		});
+
+		const proposalWithHistory = {
+			...proposal,
+			versionDetails: versionDetails,
+		}
+
+		return NextResponse.json(proposalWithHistory);
 	} catch (error) {
-		console.error("Error fetching history:", error);
-		return NextResponse.json(
-			{ error: "Failed to fetch history" },
-			{ status: 500 },
+		console.error(
+			`Error fetching proposal ${proposalId}:`,
+			error,
+		);
+		return new NextResponse(
+			JSON.stringify({ error: "Failed to fetch proposal" }),
+			{
+				status: 500,
+				headers: { "Content-Type": "application/json" },
+			},
 		);
 	}
 }
