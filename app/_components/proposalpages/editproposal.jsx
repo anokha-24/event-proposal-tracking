@@ -390,6 +390,78 @@ export default function EditProposalContent({ proposalId, onBack }) {
 			)}
 
 			<form onSubmit={handleSubmit} className="space-y-6 text-white">
+				{/* Type of Event Section */}
+				<div className="p-6 bg-gray-800 rounded-lg shadow-md">
+					<h2 className="text-xl font-semibold mb-4 text-blue-400">
+						Type of Event
+					</h2>
+
+					<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+						<div>
+							<label className="block text-sm font-medium mb-2">
+								Event Type *
+							</label>
+							<div className="flex items-center space-x-4">
+								<label className="inline-flex items-center">
+									<input
+										type="radio"
+										name="isEvent"
+										checked={proposal.isEvent === true}
+										onChange={() =>
+											setProposal((prev) => ({ ...prev, isEvent: true }))
+										}
+										className="form-radio"
+									/>
+									<span className="ml-2">Event</span>
+								</label>
+								<label className="inline-flex items-center">
+									<input
+										type="radio"
+										name="isEvent"
+										checked={proposal.isEvent === false}
+										onChange={() =>
+											setProposal((prev) => ({ ...prev, isEvent: false }))
+										}
+										className="form-radio"
+									/>
+									<span className="ml-2">Workshop</span>
+								</label>
+							</div>
+						</div>
+
+						<div>
+							<label className="block text-sm font-medium mb-2">
+								Technical Category *
+							</label>
+							<div className="flex items-center space-x-4">
+								<label className="inline-flex items-center">
+									<input
+										type="radio"
+										name="isTechnical"
+										checked={proposal.isTechnical === true}
+										onChange={() =>
+											setProposal((prev) => ({ ...prev, isTechnical: true }))
+										}
+										className="form-radio"
+									/>
+									<span className="ml-2">Technical</span>
+								</label>
+								<label className="inline-flex items-center">
+									<input
+										type="radio"
+										name="isTechnical"
+										checked={proposal.isTechnical === false}
+										onChange={() =>
+											setProposal((prev) => ({ ...prev, isTechnical: false }))
+										}
+										className="form-radio"
+									/>
+									<span className="ml-2">Non-Technical</span>
+								</label>
+							</div>
+						</div>
+					</div>
+				</div>
 				{/* Basic Information Section */}
 				<div className="p-6 bg-gray-800 rounded-lg shadow-md">
 					<h2 className="text-xl font-semibold mb-4 text-blue-400">
@@ -659,79 +731,6 @@ export default function EditProposalContent({ proposalId, onBack }) {
 							</div>
 						</div>
 					)}
-				</div>
-
-				{/* Type of Event Section */}
-				<div className="p-6 bg-gray-800 rounded-lg shadow-md">
-					<h2 className="text-xl font-semibold mb-4 text-blue-400">
-						Type of Event
-					</h2>
-
-					<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-						<div>
-							<label className="block text-sm font-medium mb-2">
-								Event Type *
-							</label>
-							<div className="flex items-center space-x-4">
-								<label className="inline-flex items-center">
-									<input
-										type="radio"
-										name="isEvent"
-										checked={proposal.isEvent === true}
-										onChange={() =>
-											setProposal((prev) => ({ ...prev, isEvent: true }))
-										}
-										className="form-radio"
-									/>
-									<span className="ml-2">Event</span>
-								</label>
-								<label className="inline-flex items-center">
-									<input
-										type="radio"
-										name="isEvent"
-										checked={proposal.isEvent === false}
-										onChange={() =>
-											setProposal((prev) => ({ ...prev, isEvent: false }))
-										}
-										className="form-radio"
-									/>
-									<span className="ml-2">Workshop</span>
-								</label>
-							</div>
-						</div>
-
-						<div>
-							<label className="block text-sm font-medium mb-2">
-								Technical Category *
-							</label>
-							<div className="flex items-center space-x-4">
-								<label className="inline-flex items-center">
-									<input
-										type="radio"
-										name="isTechnical"
-										checked={proposal.isTechnical === true}
-										onChange={() =>
-											setProposal((prev) => ({ ...prev, isTechnical: true }))
-										}
-										className="form-radio"
-									/>
-									<span className="ml-2">Technical</span>
-								</label>
-								<label className="inline-flex items-center">
-									<input
-										type="radio"
-										name="isTechnical"
-										checked={proposal.isTechnical === false}
-										onChange={() =>
-											setProposal((prev) => ({ ...prev, isTechnical: false }))
-										}
-										className="form-radio"
-									/>
-									<span className="ml-2">Non-Technical</span>
-								</label>
-							</div>
-						</div>
-					</div>
 				</div>
 
 				{/* Scheduling Section */}

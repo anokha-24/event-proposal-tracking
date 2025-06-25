@@ -264,6 +264,111 @@ export default function AddProposalContent() {
 						onSubmit={form.handleSubmit(onSubmit)}
 						className="space-y-6 text-white"
 					>
+						{/* Type of Event */}
+						<div className="p-6 bg-gray-800 rounded-lg shadow-md">
+							<h2 className="text-xl font-semibold mb-4 text-blue-400">
+								Type of Event
+							</h2>
+
+							<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+								<div>
+									<FormLabel className="text-white block mb-2">
+										Event Type *
+									</FormLabel>
+									<FormField
+										control={form.control}
+										name="isEvent"
+										render={({ field }) => (
+											<FormItem className="flex items-center space-x-4">
+												<FormControl>
+													<div className="flex space-x-4">
+														<div>
+															<input
+																type="radio"
+																id="event-option"
+																checked={field.value === true}
+																onChange={() => field.onChange(true)}
+																className="form-radio"
+															/>
+															<label
+																htmlFor="event-option"
+																className="ml-2 text-white"
+															>
+																Event
+															</label>
+														</div>
+														<div>
+															<input
+																type="radio"
+																id="workshop-option"
+																checked={field.value === false}
+																onChange={() => field.onChange(false)}
+																className="form-radio"
+															/>
+															<label
+																htmlFor="workshop-option"
+																className="ml-2 text-white"
+															>
+																Workshop
+															</label>
+														</div>
+													</div>
+												</FormControl>
+											</FormItem>
+										)}
+									/>
+								</div>
+
+								<div>
+									<FormLabel className="text-white block mb-2">
+										Technical Category *
+									</FormLabel>
+									<FormField
+										control={form.control}
+										name="isTechnical"
+										render={({ field }) => (
+											<FormItem className="flex items-center space-x-4">
+												<FormControl>
+													<div className="flex space-x-4">
+														<div>
+															<input
+																type="radio"
+																id="technical-option"
+																checked={field.value === true}
+																onChange={() => field.onChange(true)}
+																className="form-radio"
+															/>
+															<label
+																htmlFor="technical-option"
+																className="ml-2 text-white"
+															>
+																Technical
+															</label>
+														</div>
+														<div>
+															<input
+																type="radio"
+																id="nontechnical-option"
+																checked={field.value === false}
+																onChange={() => field.onChange(false)}
+																className="form-radio"
+															/>
+															<label
+																htmlFor="nontechnical-option"
+																className="ml-2 text-white"
+															>
+																Non-Technical
+															</label>
+														</div>
+													</div>
+												</FormControl>
+											</FormItem>
+										)}
+									/>
+								</div>
+							</div>
+						</div>
+
 						{/* Basic Information */}
 						<div className="p-6 bg-gray-800 rounded-lg shadow-md">
 							<h2 className="text-xl font-semibold mb-4 text-blue-400">
@@ -641,111 +746,6 @@ export default function AddProposalContent() {
 									</div>
 								</div>
 							)}
-						</div>
-
-						{/* Type of Event */}
-						<div className="p-6 bg-gray-800 rounded-lg shadow-md">
-							<h2 className="text-xl font-semibold mb-4 text-blue-400">
-								Type of Event
-							</h2>
-
-							<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-								<div>
-									<FormLabel className="text-white block mb-2">
-										Event Type *
-									</FormLabel>
-									<FormField
-										control={form.control}
-										name="isEvent"
-										render={({ field }) => (
-											<FormItem className="flex items-center space-x-4">
-												<FormControl>
-													<div className="flex space-x-4">
-														<div>
-															<input
-																type="radio"
-																id="event-option"
-																checked={field.value === true}
-																onChange={() => field.onChange(true)}
-																className="form-radio"
-															/>
-															<label
-																htmlFor="event-option"
-																className="ml-2 text-white"
-															>
-																Event
-															</label>
-														</div>
-														<div>
-															<input
-																type="radio"
-																id="workshop-option"
-																checked={field.value === false}
-																onChange={() => field.onChange(false)}
-																className="form-radio"
-															/>
-															<label
-																htmlFor="workshop-option"
-																className="ml-2 text-white"
-															>
-																Workshop
-															</label>
-														</div>
-													</div>
-												</FormControl>
-											</FormItem>
-										)}
-									/>
-								</div>
-
-								<div>
-									<FormLabel className="text-white block mb-2">
-										Technical Category *
-									</FormLabel>
-									<FormField
-										control={form.control}
-										name="isTechnical"
-										render={({ field }) => (
-											<FormItem className="flex items-center space-x-4">
-												<FormControl>
-													<div className="flex space-x-4">
-														<div>
-															<input
-																type="radio"
-																id="technical-option"
-																checked={field.value === true}
-																onChange={() => field.onChange(true)}
-																className="form-radio"
-															/>
-															<label
-																htmlFor="technical-option"
-																className="ml-2 text-white"
-															>
-																Technical
-															</label>
-														</div>
-														<div>
-															<input
-																type="radio"
-																id="nontechnical-option"
-																checked={field.value === false}
-																onChange={() => field.onChange(false)}
-																className="form-radio"
-															/>
-															<label
-																htmlFor="nontechnical-option"
-																className="ml-2 text-white"
-															>
-																Non-Technical
-															</label>
-														</div>
-													</div>
-												</FormControl>
-											</FormItem>
-										)}
-									/>
-								</div>
-							</div>
 						</div>
 
 						{/* Scheduling */}
