@@ -3,9 +3,8 @@
 import { useState, useEffect } from "react";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import {
-	getProposals,
-	getProposalsByStatus,
-	deleteProposal,
+	getPendingProposalsByUser,
+	getReviewedProposalsByUser,
 } from "../../api/proposalService";
 
 export default function DashboardContent({ onNavigate }) {
