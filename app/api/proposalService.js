@@ -158,8 +158,6 @@ const addProposalReply = async (proposalId, replyData) => {
 			version: replyData.version,
 		};
 
-		console.log(newReply);
-
 		await updateDoc(proposalRef, {
 			comments: [...currentReplies, newReply],
 			updatedAt: serverTimestamp(),
