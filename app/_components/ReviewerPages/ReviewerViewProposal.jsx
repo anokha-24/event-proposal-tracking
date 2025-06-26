@@ -1010,7 +1010,7 @@ export default function ReviewerProposalViewContent({ onBack, proposalId }) {
 													</div>
 												</div>
 
-												{reviewStatus == "Approved" && reviewer.level < 1 && (
+												{reviewStatus === "Approved" && reviewer.level < 1 && (
 													<div className="p-6 bg-gray-800 rounded-lg shadow-md">
 														<label className="block text-xs font-medium text-gray-400 mb-1">
 															Select next reviewer
