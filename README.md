@@ -8,6 +8,7 @@ This is a React-based project for managing and submitting event proposals for An
 
 ```sh
 npm install
+npm install date-fns
 ```
 
 ## 2. Install Firebase and Firebase Tools
