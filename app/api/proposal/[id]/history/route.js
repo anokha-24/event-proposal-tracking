@@ -21,15 +21,12 @@ export async function GET(request, { params }) {
 		const proposal = await getProposalById(proposalId);
 
 		if (!proposal) {
-			return new NextResponse(
-				JSON.stringify({ error: "Proposal not found" }),
-				{
-					status: 404,
-					headers: { "Content-Type": "application/json" },
-				},
-			);
+			return new NextResponse(JSON.stringify({ error: "Proposal not found" }), {
+				status: 404,
+				headers: { "Content-Type": "application/json" },
+			});
 		}
-		
+
 		const history = await getProposalHistory(proposal.id);
 
 		let versionDetails = [];
@@ -60,14 +57,11 @@ export async function GET(request, { params }) {
 		const proposalWithHistory = {
 			...proposal,
 			versionDetails: versionDetails,
-		}
+		};
 
 		return NextResponse.json(proposalWithHistory);
 	} catch (error) {
-		console.error(
-			`Error fetching proposal ${proposalId}:`,
-			error,
-		);
+		console.error(`Error fetching proposal ${proposalId}:`, error);
 		return new NextResponse(
 			JSON.stringify({ error: "Failed to fetch proposal" }),
 			{

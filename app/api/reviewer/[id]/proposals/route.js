@@ -1,5 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
-import { collection, query, where, getDocs, or, collectionGroup, doc, getDoc } from "firebase/firestore";
+import {
+	collection,
+	query,
+	where,
+	getDocs,
+	or,
+	collectionGroup,
+	doc,
+	getDoc,
+} from "firebase/firestore";
 import { db } from "@/app/firebase/firebase";
 
 export async function GET(_, { params }) {
@@ -20,7 +29,10 @@ export async function GET(_, { params }) {
 
 		if (reviewerData.level === 2) {
 			const proposalsRef = collection(db, "Proposals");
-			const q = query(proposalsRef, where("department", "in", reviewerData.department));
+			const q = query(
+				proposalsRef,
+				where("department", "in", reviewerData.department),
+			);
 			const snapshot = await getDocs(q);
 			const proposals = snapshot.docs.map((doc) => ({
 				id: doc.id,
@@ -30,11 +42,13 @@ export async function GET(_, { params }) {
 			return NextResponse.json({ success: true, uniqueProposals: proposals });
 		}
 
-
 		// Query all proposals where currentReviewer.reviewerId == reviewerId
 		const proposalsRef = collection(db, "Proposals");
 
-		const q = query(proposalsRef, where("currentReviewer.reviewerId", "==", reviewerId));
+		const q = query(
+			proposalsRef,
+			where("currentReviewer.reviewerId", "==", reviewerId),
+		);
 		const snapshot = await getDocs(q);
 
 		const proposals = snapshot.docs.map((doc) => ({
@@ -43,7 +57,10 @@ export async function GET(_, { params }) {
 		}));
 
 		// Check subcollections for history.
-		const q2 = query(collectionGroup(db, "History"), where("proposalThread.currentReviewer.reviewerId", "==", reviewerId));
+		const q2 = query(
+			collectionGroup(db, "History"),
+			where("proposalThread.currentReviewer.reviewerId", "==", reviewerId),
+		);
 		const snapshot2 = await getDocs(q2);
 		const history = snapshot2.docs.map((doc) => ({
 			id: doc.id,
@@ -66,7 +83,9 @@ export async function GET(_, { params }) {
 				data.id = docSnap.id;
 
 				if (data) {
-					const reviewerData = data.reviewerHistory.find((item) => item.reviewerId === reviewerId);
+					const reviewerData = data.reviewerHistory.find(
+						(item) => item.reviewerId === reviewerId,
+					);
 					if (reviewerData) {
 						data.status = reviewerData.decision;
 					}
@@ -85,7 +104,10 @@ export async function GET(_, { params }) {
 				index === self.findIndex((t) => t.id === proposal.id),
 		);
 
-		return NextResponse.json({ success: true, uniqueProposals: uniqueProposals });
+		return NextResponse.json({
+			success: true,
+			uniqueProposals: uniqueProposals,
+		});
 	} catch (error) {
 		console.error("Error fetching proposals for reviewer:", error);
 		return NextResponse.json(

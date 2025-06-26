@@ -146,9 +146,7 @@ export default function DashboardContent({ onNavigate }) {
 						<p className="text-green-400 text-4xl font-bold">
 							{loading ? "..." : reviewedCount}
 						</p>
-						<p className="text-slate-500 text-xs mt-2">
-							Evaluation completed
-						</p>
+						<p className="text-slate-500 text-xs mt-2">Evaluation completed</p>
 					</div>
 				</div>
 

@@ -19,10 +19,10 @@ export async function GET(_, { params }) {
 
 		return NextResponse.json({ success: true, user: docSnap.data() });
 	} catch (error) {
-			return NextResponse.json(
+		return NextResponse.json(
 			{ success: false, message: error.message },
-				{ status: 400 },
-			);
+			{ status: 400 },
+		);
 	}
 }
 

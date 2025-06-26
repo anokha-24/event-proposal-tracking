@@ -4,13 +4,7 @@ import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import apiRequest from "@/utils/apiRequest";
-import {
-	Loader2,
-	CheckCircle,
-	XCircle,
-	Clock,
-	HelpCircle,
-} from "lucide-react";
+import { Loader2, CheckCircle, XCircle, Clock, HelpCircle } from "lucide-react";
 import { auth } from "@/app/firebase/firebase";
 import { onAuthStateChanged } from "firebase/auth";
 
@@ -155,10 +149,7 @@ export default function ReviewProposalsPage() {
 			<div className="flex flex-wrap justify-between items-center gap-4 mb-8">
 				<h1 className="text-3xl font-bold tracking-tight">Review Proposals</h1>
 			</div>
-			<Tabs
-				defaultValue="pending"
-				className="w-full flex-grow flex flex-col"
-			>
+			<Tabs defaultValue="pending" className="w-full flex-grow flex flex-col">
 				<TabsList className="relative inline-flex h-auto items-center justify-start rounded-full bg-slate-900 p-2 text-slate-400 self-start mb-8 border border-slate-800">
 					<TabsTrigger
 						value="all"
@@ -216,4 +207,4 @@ export default function ReviewProposalsPage() {
 			</Tabs>
 		</div>
 	);
-} 
+}

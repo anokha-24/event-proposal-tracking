@@ -19,7 +19,7 @@ const getProposalHistory = async (proposalId) => {
 	try {
 		const q = query(
 			collection(db, "Proposals", proposalId, "History"),
-			orderBy("version", "desc"),
+			orderBy("updatedAt", "desc"),
 		);
 		const querySnapshot = await getDocs(q);
 		return querySnapshot.docs.map((doc) => ({

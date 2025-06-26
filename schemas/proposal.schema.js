@@ -35,7 +35,10 @@ export const createProposalSchema = z
 			.string()
 			.min(5, "Resource person details required"),
 		isResourcePersonPaid: z.boolean(),
-		resourcePersonPayment: z.number().min(0, "Payment cannot be negative").optional(),
+		resourcePersonPayment: z
+			.number()
+			.min(0, "Payment cannot be negative")
+			.optional(),
 		externalResources: z.string().optional(),
 		additionalRequirements: z.string().optional(),
 		targetAudience: z.string().optional(),
@@ -64,7 +67,11 @@ export const createProposalSchema = z
 				message: "Group details are required when not an individual event",
 			});
 		}
-		if (data.isResourcePersonPaid && (data.resourcePersonPayment === undefined || data.resourcePersonPayment === null)) {
+		if (
+			data.isResourcePersonPaid &&
+			(data.resourcePersonPayment === undefined ||
+				data.resourcePersonPayment === null)
+		) {
 			ctx.addIssue({
 				path: ["resourcePersonPayment"],
 				code: z.ZodIssueCode.custom,

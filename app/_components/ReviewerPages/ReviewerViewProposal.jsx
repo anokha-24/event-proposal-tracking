@@ -1,15 +1,9 @@
 "use client";
-import { query, orderBy } from "firebase/firestore";
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { auth, db } from "@/app/firebase/firebase";
 import { onAuthStateChanged } from "firebase/auth";
-import {
-	collection,
-	doc,
-	getDoc,
-	getDocs,
-} from "firebase/firestore";
+import { doc, getDoc } from "firebase/firestore";
 import {
 	RefreshCw,
 	CheckCircle,
@@ -38,10 +32,7 @@ import { ComboboxReviewer } from "@/components/ui/combo-box-reviewer";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 
-export default function ReviewerProposalViewContent({
-	onBack,
-	proposalId,
-}) {
+export default function ReviewerProposalViewContent({ onBack, proposalId }) {
 	const [proposals, setProposals] = useState([]);
 	const [loading, setLoading] = useState(true);
 	const [reviewer, setReviewer] = useState(null);
@@ -114,7 +105,10 @@ export default function ReviewerProposalViewContent({
 					}
 
 					try {
-						const proposal = await apiRequest(`/api/proposal/${proposalId}/history`, "GET");
+						const proposal = await apiRequest(
+							`/api/proposal/${proposalId}/history`,
+							"GET",
+						);
 
 						if (proposal) {
 							setProposals([proposal]);
@@ -279,8 +273,9 @@ export default function ReviewerProposalViewContent({
 
 		return (
 			<div
-				className={`bg-gray-800 p-3 rounded border-l-4 ${borderColor} ${isCurrentReviewer ? "ml-auto" : "mr-auto"
-					} max-w-[90%] break-words`}
+				className={`bg-gray-800 p-3 rounded border-l-4 ${borderColor} ${
+					isCurrentReviewer ? "ml-auto" : "mr-auto"
+				} max-w-[90%] break-words`}
 			>
 				<div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-1 gap-1">
 					<div className="flex items-center gap-2">
@@ -363,30 +358,30 @@ export default function ReviewerProposalViewContent({
 					prevProposals.map((proposal) =>
 						proposal.id === proposalId
 							? {
-								...proposal,
-								status: "pending",
-								currentReviewer: selectedReviewer,
-								reviewerHistory: [
-									...(proposal.reviewerHistory || []),
-									{
-										...reviewer,
-										level: proposal.level || 1,
-										decision: "approved",
-										comments: reviewComment,
-										reviewedAt: new Date(),
-									},
-								],
-								comments: [
-									...(proposal.comments || []),
-									{
-										text: reviewComment,
-										reviewerName:
-											reviewer.displayName || reviewer.name || "Reviewer",
-										timestamp: new Date(),
-										status: "approved",
-									},
-								],
-							}
+									...proposal,
+									status: "pending",
+									currentReviewer: selectedReviewer,
+									reviewerHistory: [
+										...(proposal.reviewerHistory || []),
+										{
+											...reviewer,
+											level: proposal.level || 1,
+											decision: "approved",
+											comments: reviewComment,
+											reviewedAt: new Date(),
+										},
+									],
+									comments: [
+										...(proposal.comments || []),
+										{
+											text: reviewComment,
+											reviewerName:
+												reviewer.displayName || reviewer.name || "Reviewer",
+											timestamp: new Date(),
+											status: "approved",
+										},
+									],
+								}
 							: proposal,
 					),
 				);
@@ -423,30 +418,30 @@ export default function ReviewerProposalViewContent({
 					prevProposals.map((proposal) =>
 						proposal.id === proposalId
 							? {
-								...proposal,
-								status: newStatus,
-								currentReviewer: isFinalApproval ? "" : "",
-								reviewerHistory: [
-									...(proposal.reviewerHistory || []),
-									{
-										...reviewer,
-										level: reviewer.level,
-										decision: "approved",
-										comments: reviewComment,
-										reviewedAt: new Date(),
-									},
-								],
-								comments: [
-									...(proposal.comments || []),
-									{
-										text: reviewComment,
-										reviewerName:
-											reviewer.displayName || reviewer.name || "Reviewer",
-										timestamp: new Date(),
-										status: "approved",
-									},
-								],
-							}
+									...proposal,
+									status: newStatus,
+									currentReviewer: isFinalApproval ? "" : "",
+									reviewerHistory: [
+										...(proposal.reviewerHistory || []),
+										{
+											...reviewer,
+											level: reviewer.level,
+											decision: "approved",
+											comments: reviewComment,
+											reviewedAt: new Date(),
+										},
+									],
+									comments: [
+										...(proposal.comments || []),
+										{
+											text: reviewComment,
+											reviewerName:
+												reviewer.displayName || reviewer.name || "Reviewer",
+											timestamp: new Date(),
+											status: "approved",
+										},
+									],
+								}
 							: proposal,
 					),
 				);
@@ -464,19 +459,19 @@ export default function ReviewerProposalViewContent({
 					prevProposals.map((proposal) =>
 						proposal.id === proposalId
 							? {
-								...proposal,
-								status: reviewStatus,
-								comments: [
-									...(proposal.comments || []),
-									{
-										text: reviewComment,
-										reviewerName:
-											reviewer.displayName || reviewer.name || "Reviewer",
-										timestamp: new Date(),
-										status: reviewStatus,
-									},
-								],
-							}
+									...proposal,
+									status: reviewStatus,
+									comments: [
+										...(proposal.comments || []),
+										{
+											text: reviewComment,
+											reviewerName:
+												reviewer.displayName || reviewer.name || "Reviewer",
+											timestamp: new Date(),
+											status: reviewStatus,
+										},
+									],
+								}
 							: proposal,
 					),
 				);
@@ -637,7 +632,7 @@ export default function ReviewerProposalViewContent({
 										</div>
 									</div>
 								</div>
-								
+
 								<div className="bg-gray-700 p-4 rounded">
 									<h4 className="text-sm font-medium text-gray-300 mb-3">
 										Key Information:
@@ -746,12 +741,18 @@ export default function ReviewerProposalViewContent({
 														</h5>
 														<p className="text-sm text-green-400 whitespace-pre-wrap flex items-center">
 															Income:
-															<IndianRupee size={14} className="ml-1.5 mr-0.5" />
+															<IndianRupee
+																size={14}
+																className="ml-1.5 mr-0.5"
+															/>
 															{income}
 														</p>
 														<p className="text-sm text-red-400 whitespace-pre-wrap flex items-center">
 															Expense:
-															<IndianRupee size={14} className="ml-1.5 mr-0.5" />
+															<IndianRupee
+																size={14}
+																className="ml-1.5 mr-0.5"
+															/>
 															{expense}
 														</p>
 													</div>
@@ -819,8 +820,7 @@ export default function ReviewerProposalViewContent({
 										{!version.isIndividual && version.groupDetails && (
 											<div className="col-span-1 break-words bg-gray-800 p-3 rounded">
 												<h5 className="text-xs font-medium text-gray-400 flex items-center gap-1">
-													<Users2 size={14} /> Group Registration
-													Details
+													<Users2 size={14} /> Group Registration Details
 												</h5>
 												<div className="grid grid-cols-2 gap-2 mt-2">
 													<div>
@@ -833,12 +833,9 @@ export default function ReviewerProposalViewContent({
 														</p>
 													</div>
 													<div>
-														<p className="text-xs text-gray-500">
-															Fee Type:
-														</p>
+														<p className="text-xs text-gray-500">Fee Type:</p>
 														<p className="text-sm text-gray-300 capitalize">
-															{version.groupDetails.feeType ===
-																"perhead"
+															{version.groupDetails.feeType === "perhead"
 																? "Per Head"
 																: "Per Group"}
 														</p>
@@ -855,9 +852,7 @@ export default function ReviewerProposalViewContent({
 												<div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-2">
 													{version.preferredDays.day1 && (
 														<div>
-															<p className="text-xs text-gray-500">
-																Day 1:
-															</p>
+															<p className="text-xs text-gray-500">Day 1:</p>
 															<p className="text-sm text-gray-300">
 																{version.preferredDays.day1}
 															</p>
@@ -865,9 +860,7 @@ export default function ReviewerProposalViewContent({
 													)}
 													{version.preferredDays.day2 && (
 														<div>
-															<p className="text-xs text-gray-500">
-																Day 2:
-															</p>
+															<p className="text-xs text-gray-500">Day 2:</p>
 															<p className="text-sm text-gray-300">
 																{version.preferredDays.day2}
 															</p>
@@ -875,9 +868,7 @@ export default function ReviewerProposalViewContent({
 													)}
 													{version.preferredDays.day3 && (
 														<div>
-															<p className="text-xs text-gray-500">
-																Day 3:
-															</p>
+															<p className="text-xs text-gray-500">Day 3:</p>
 															<p className="text-sm text-gray-300">
 																{version.preferredDays.day3}
 															</p>
@@ -906,9 +897,7 @@ export default function ReviewerProposalViewContent({
 												)}
 												{version.isIndividual !== undefined && (
 													<span className="px-2 py-0.5 bg-gray-600 text-gray-300 text-xs rounded-full whitespace-nowrap">
-														{version.isIndividual
-															? "Individual"
-															: "Group"}
+														{version.isIndividual ? "Individual" : "Group"}
 													</span>
 												)}
 											</div>
@@ -920,10 +909,7 @@ export default function ReviewerProposalViewContent({
 							<div className="space-y-4 min-w-0">
 								<div>
 									<h4 className="text-sm font-medium text-gray-300 mb-2 flex items-center">
-										<MessageSquare
-											size={16}
-											className="mr-1 flex-shrink-0"
-										/>
+										<MessageSquare size={16} className="mr-1 flex-shrink-0" />
 										<span>
 											{index === 0
 												? "Discussion"
@@ -932,12 +918,15 @@ export default function ReviewerProposalViewContent({
 									</h4>
 
 									<div className="bg-gray-700 p-4 rounded max-h-96 overflow-y-auto space-y-3">
-										{version.comments &&
-											version.comments.length > 0 ? (
+										{version.comments && version.comments.length > 0 ? (
 											[...version.comments]
 												.sort((a, b) => {
-													const timeA = a.timestamp?.seconds ? a.timestamp.seconds * 1000 : new Date(a.timestamp).getTime();
-													const timeB = b.timestamp?.seconds ? b.timestamp.seconds * 1000 : new Date(b.timestamp).getTime();
+													const timeA = a.timestamp?.seconds
+														? a.timestamp.seconds * 1000
+														: new Date(a.timestamp).getTime();
+													const timeB = b.timestamp?.seconds
+														? b.timestamp.seconds * 1000
+														: new Date(b.timestamp).getTime();
 													return timeA - timeB;
 												})
 												.map((comment, idx) => (
@@ -956,138 +945,142 @@ export default function ReviewerProposalViewContent({
 									</div>
 								</div>
 
-								{index === 0 && ((proposal.currentReviewer?.reviewerId === reviewer?.uid) || (reviewer?.level === 2)) && (
-									<div className="bg-gray-700 p-4 rounded">
-										<h4 className="text-sm font-medium text-gray-300 mb-3 flex items-center">
-											<PenTool size={16} className="mr-1 flex-shrink-0" />
-											<span>Add Review:</span>
-										</h4>
+								{index === 0 &&
+									(proposal.currentReviewer?.reviewerId === reviewer?.uid ||
+										reviewer?.level === 2) && (
+										<div className="bg-gray-700 p-4 rounded">
+											<h4 className="text-sm font-medium text-gray-300 mb-3 flex items-center">
+												<PenTool size={16} className="mr-1 flex-shrink-0" />
+												<span>Add Review:</span>
+											</h4>
 
-										<div className="space-y-3">
-											<div>
-												<label className="block text-xs font-medium text-gray-400 mb-1">
-													Review Status:
-												</label>
-												<div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-													<button
-														type="button"
-														className={`flex items-center justify-center px-3 py-2 rounded-md text-sm ${reviewStatus === "Reviewed"
-																? "bg-blue-700 text-white"
-																: "bg-gray-600 text-gray-300 hover:bg-gray-500"
-															} whitespace-nowrap`}
-														onClick={() => setReviewStatus("Reviewed")}
-													>
-														<RefreshCw
-															size={14}
-															className="mr-1 flex-shrink-0"
-														/>
-														<span>Request Changes</span>
-													</button>
-
-													<button
-														type="button"
-														className={`flex items-center justify-center px-3 py-2 rounded-md text-sm ${reviewStatus === "Approved"
-																? "bg-green-700 text-white"
-																: "bg-gray-600 text-gray-300 hover:bg-gray-500"
-															} whitespace-nowrap`}
-														onClick={() => setReviewStatus("Approved")}
-													>
-														<ThumbsUp
-															size={14}
-															className="mr-1 flex-shrink-0"
-														/>
-														<span>{"Approve"}</span>
-													</button>
-
-													<button
-														type="button"
-														className={`flex items-center justify-center px-3 py-2 rounded-md text-sm ${reviewStatus === "Rejected"
-																? "bg-red-700 text-white"
-																: "bg-gray-600 text-gray-300 hover:bg-gray-500"
-															} whitespace-nowrap`}
-														onClick={() => setReviewStatus("Rejected")}
-													>
-														<ThumbsDown
-															size={14}
-															className="mr-1 flex-shrink-0"
-														/>
-														<span>Reject</span>
-													</button>
-												</div>
-											</div>
-
-											{reviewStatus == "Approved" && reviewer.level < 1 && (
-												<div className="p-6 bg-gray-800 rounded-lg shadow-md">
+											<div className="space-y-3">
+												<div>
 													<label className="block text-xs font-medium text-gray-400 mb-1">
-														Select next reviewer
+														Review Status:
 													</label>
+													<div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+														<button
+															type="button"
+															className={`flex items-center justify-center px-3 py-2 rounded-md text-sm ${
+																reviewStatus === "Reviewed"
+																	? "bg-blue-700 text-white"
+																	: "bg-gray-600 text-gray-300 hover:bg-gray-500"
+															} whitespace-nowrap`}
+															onClick={() => setReviewStatus("Reviewed")}
+														>
+															<RefreshCw
+																size={14}
+																className="mr-1 flex-shrink-0"
+															/>
+															<span>Request Changes</span>
+														</button>
 
-													<ComboboxReviewer
-														options={filteredReviewers.map((r) => ({
-															value: r.id,
-															label: `${r.name} - [ ${r.email} ]`,
-														}))}
-														selected={selectedReviewer}
-														setSelected={setSelectedReviewer}
-													/>
+														<button
+															type="button"
+															className={`flex items-center justify-center px-3 py-2 rounded-md text-sm ${
+																reviewStatus === "Approved"
+																	? "bg-green-700 text-white"
+																	: "bg-gray-600 text-gray-300 hover:bg-gray-500"
+															} whitespace-nowrap`}
+															onClick={() => setReviewStatus("Approved")}
+														>
+															<ThumbsUp
+																size={14}
+																className="mr-1 flex-shrink-0"
+															/>
+															<span>{"Approve"}</span>
+														</button>
+
+														<button
+															type="button"
+															className={`flex items-center justify-center px-3 py-2 rounded-md text-sm ${
+																reviewStatus === "Rejected"
+																	? "bg-red-700 text-white"
+																	: "bg-gray-600 text-gray-300 hover:bg-gray-500"
+															} whitespace-nowrap`}
+															onClick={() => setReviewStatus("Rejected")}
+														>
+															<ThumbsDown
+																size={14}
+																className="mr-1 flex-shrink-0"
+															/>
+															<span>Reject</span>
+														</button>
+													</div>
 												</div>
-											)}
 
-											<div>
-												<label className="block text-xs font-medium text-gray-400 mb-1">
-													Review Comment:
-												</label>
-												<Textarea
-													ref={commentInputRef}
-													value={reviewComment}
-													onChange={(e) =>
-														setReviewComment(e.target.value)
-													}
-													placeholder="Enter your review comments here..."
-													className="w-full p-3 bg-gray-800 border border-gray-600 rounded-md text-white text-sm min-h-24 break-words whitespace-pre-wrap"
-													required
-												/>
-												<p className="text-xs text-gray-500 mt-1 break-words">
-													Please provide detailed feedback, especially if
-													rejecting or requesting changes.
-												</p>
-											</div>
+												{reviewStatus == "Approved" && reviewer.level < 1 && (
+													<div className="p-6 bg-gray-800 rounded-lg shadow-md">
+														<label className="block text-xs font-medium text-gray-400 mb-1">
+															Select next reviewer
+														</label>
 
-											<div className="pt-2">
-												<button
-													type="button"
-													onClick={() => handleSubmitReview(proposal.id)}
-													disabled={
-														isSubmitting ||
-														!reviewComment.trim() ||
-														(reviewStatus === "Approved" &&
-															reviewer?.level < 1 &&
-															!selectedReviewer)
-													}
-													className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded-md py-2 flex items-center justify-center gap-2 transition whitespace-nowrap"
-												>
-													{isSubmitting ? (
-														<>
-															<div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full flex-shrink-0"></div>
-															<span>Submitting...</span>
-														</>
-													) : (
-														<>
-															<Send size={16} className="flex-shrink-0" />
-															<span>Submit Review</span>
-														</>
-													)}
-												</button>
+														<ComboboxReviewer
+															options={filteredReviewers.map((r) => ({
+																value: r.id,
+																label: `${r.name} - [ ${r.email} ]`,
+															}))}
+															selected={selectedReviewer}
+															setSelected={setSelectedReviewer}
+														/>
+													</div>
+												)}
+
+												<div>
+													<label className="block text-xs font-medium text-gray-400 mb-1">
+														Review Comment:
+													</label>
+													<Textarea
+														ref={commentInputRef}
+														value={reviewComment}
+														onChange={(e) => setReviewComment(e.target.value)}
+														placeholder="Enter your review comments here..."
+														className="w-full p-3 bg-gray-800 border border-gray-600 rounded-md text-white text-sm min-h-24 break-words whitespace-pre-wrap"
+														required
+													/>
+													<p className="text-xs text-gray-500 mt-1 break-words">
+														Please provide detailed feedback, especially if
+														rejecting or requesting changes.
+													</p>
+												</div>
+
+												<div className="pt-2">
+													<button
+														type="button"
+														onClick={() => handleSubmitReview(proposal.id)}
+														disabled={
+															isSubmitting ||
+															!reviewComment.trim() ||
+															(reviewStatus === "Approved" &&
+																reviewer?.level < 1 &&
+																!selectedReviewer)
+														}
+														className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded-md py-2 flex items-center justify-center gap-2 transition whitespace-nowrap"
+													>
+														{isSubmitting ? (
+															<>
+																<div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full flex-shrink-0"></div>
+																<span>Submitting...</span>
+															</>
+														) : (
+															<>
+																<Send size={16} className="flex-shrink-0" />
+																<span>Submit Review</span>
+															</>
+														)}
+													</button>
+												</div>
 											</div>
 										</div>
-									</div>
-								)}
+									)}
 							</div>
 						</div>
 					</div>
 				))}
 
-				{proposal.versionDetails.length > (loadedVersions[proposal.id] || 1) && (
+				{proposal.versionDetails.length >
+					(loadedVersions[proposal.id] || 1) && (
 					<div className="text-center mt-4">
 						<button
 							onClick={() => loadMoreVersions(proposal.id)}
@@ -1168,14 +1161,13 @@ export default function ReviewerProposalViewContent({
 					{proposals.map((proposal) => (
 						<div
 							key={proposal.id}
-							className={`bg-gray-800 rounded-lg border ${expandedProposal === proposal.id
+							className={`bg-gray-800 rounded-lg border ${
+								expandedProposal === proposal.id
 									? "border-blue-500"
 									: "border-gray-700"
-								} transition-all`}
+							} transition-all`}
 						>
-							<div
-								className="p-4 cursor-pointer flex justify-between items-center"
-							>
+							<div className="p-4 cursor-pointer flex justify-between items-center">
 								<div className="flex items-center gap-3 min-w-0">
 									<div className="flex-shrink-0">
 										{getStatusIcon(proposal.status)}
@@ -1194,7 +1186,9 @@ export default function ReviewerProposalViewContent({
 											{proposal.department && (
 												<span className="flex items-center whitespace-nowrap">
 													<Layers size={12} className="mr-1 flex-shrink-0" />
-													<span className="truncate">{proposal.department}</span>
+													<span className="truncate">
+														{proposal.department}
+													</span>
 												</span>
 											)}
 											{proposal.proposerName && (
@@ -1216,7 +1210,8 @@ export default function ReviewerProposalViewContent({
 								</div>
 
 								<div className="flex items-center gap-3 ml-2">
-									{((proposal.currentReviewer?.reviewerId === reviewer?.uid) || (reviewer?.level === 2)) && (
+									{(proposal.currentReviewer?.reviewerId === reviewer?.uid ||
+										reviewer?.level === 2) && (
 										<div className="hidden sm:block text-sm text-white">
 											{getStatusBadge(proposal.status)}
 										</div>

@@ -1,13 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import {
-	FileText,
-	Menu,
-	X,
-	LogOut,
-	LayoutDashboard,
-} from "lucide-react";
+import { FileText, Menu, X, LogOut, LayoutDashboard } from "lucide-react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { auth, db } from "@/app/firebase/firebase";
@@ -200,4 +194,4 @@ export default function UserLayout({ children }) {
 			)}
 		</div>
 	);
-} 
+}

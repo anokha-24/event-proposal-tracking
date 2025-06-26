@@ -109,16 +109,17 @@ export default function ViewProposalsPage() {
 					<CardTitle className="text-lg text-slate-100 truncate">
 						{proposal.title}
 					</CardTitle>
-					{(proposal.status.toLowerCase() !== "approved" && proposal.status.toLowerCase() !== 'rejected') && (
-						<Button
-							variant="ghost"
-							size="icon"
-							className="text-slate-400 hover:text-white hover:bg-slate-700"
-							onClick={(e) => handleEditClick(e, proposal.id)}
-						>
-							<Edit className="h-4 w-4" />
-						</Button>
-					)}
+					{proposal.status.toLowerCase() !== "approved" &&
+						proposal.status.toLowerCase() !== "rejected" && (
+							<Button
+								variant="ghost"
+								size="icon"
+								className="text-slate-400 hover:text-white hover:bg-slate-700"
+								onClick={(e) => handleEditClick(e, proposal.id)}
+							>
+								<Edit className="h-4 w-4" />
+							</Button>
+						)}
 				</CardHeader>
 				<CardContent className="flex flex-col flex-grow justify-between">
 					<div>
@@ -229,8 +230,8 @@ export default function ViewProposalsPage() {
 								No Proposals Yet
 							</h3>
 							<p className="mt-2 max-w-xs">
-								It looks like you haven't created any proposals. Get started
-								by clicking the button above!
+								It looks like you haven't created any proposals. Get started by
+								clicking the button above!
 							</p>
 						</div>
 					)}
@@ -247,4 +248,4 @@ export default function ViewProposalsPage() {
 			</Tabs>
 		</div>
 	);
-} 
+}

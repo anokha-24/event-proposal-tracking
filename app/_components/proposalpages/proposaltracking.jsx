@@ -164,7 +164,10 @@ function VersionDetails({ proposal: initialProposal, auth }) {
 		);
 	}
 
-	const versionsToDisplay = proposal.versionDetails.slice(0, loadedVersionsCount);
+	const versionsToDisplay = proposal.versionDetails.slice(
+		0,
+		loadedVersionsCount,
+	);
 
 	return (
 		<div className="space-y-8">
@@ -542,23 +545,25 @@ function VersionDetails({ proposal: initialProposal, auth }) {
 														className={`flex ${isCurrentUser ? "justify-end" : "justify-start"}`}
 													>
 														<div
-															className={`max-w-[80%] rounded-lg p-3 ${isCurrentUser
+															className={`max-w-[80%] rounded-lg p-3 ${
+																isCurrentUser
 																	? "bg-green-900/30 border-t-4 border-green-500 rounded-tr-none"
 																	: "bg-blue-900/30 border-t-4 border-blue-500 rounded-tl-none"
-																}`}
+															}`}
 														>
 															<div
 																className={`flex ${isCurrentUser ? "flex-row-reverse" : "flex-row"} justify-between items-start mb-1 gap-2`}
 															>
 																<span
-																	className={`text-xs font-medium ${isCurrentUser
+																	className={`text-xs font-medium ${
+																		isCurrentUser
 																			? "text-green-400"
 																			: "text-blue-400"
-																		}`}
+																	}`}
 																>
 																	{isCurrentUser
 																		? "You"
-																		: item.reviewerName ?? "Reviewer"}
+																		: (item.reviewerName ?? "Reviewer")}
 																</span>
 																<span className="text-xs text-gray-400 whitespace-nowrap">
 																	{formatTimestamp(item.timestamp)}
@@ -688,12 +693,13 @@ function VersionDetails({ proposal: initialProposal, auth }) {
 														<div className="mt-1 text-sm text-gray-300">
 															Decision:{" "}
 															<span
-																className={`capitalize font-medium ${entry.decision === "approved"
+																className={`capitalize font-medium ${
+																	entry.decision === "approved"
 																		? "text-green-400"
 																		: entry.decision === "rejected"
 																			? "text-red-400"
 																			: "text-gray-300"
-																	}`}
+																}`}
 															>
 																{entry.decision}
 															</span>
@@ -705,8 +711,7 @@ function VersionDetails({ proposal: initialProposal, auth }) {
 															</div>
 														)}
 														<div className="mt-1 text-xs text-gray-400">
-															Reviewed at:{" "}
-															{formatTimestamp(entry.reviewedAt)}
+															Reviewed at: {formatTimestamp(entry.reviewedAt)}
 														</div>
 													</div>
 												))}
@@ -845,8 +850,8 @@ function ProposalListView({ auth }) {
 		filter === "all"
 			? proposals
 			: proposals.filter(
-				(p) => p.status?.toLowerCase() === filter.toLowerCase(),
-			);
+					(p) => p.status?.toLowerCase() === filter.toLowerCase(),
+				);
 
 	const toggleExpand = (id) => {
 		setExpandedProposal(expandedProposal === id ? null : id);
@@ -947,10 +952,11 @@ function ProposalListView({ auth }) {
 					{filteredProposals.map((proposal) => (
 						<div
 							key={proposal.id}
-							className={`bg-gray-800 rounded-lg border ${expandedProposal === proposal.id
+							className={`bg-gray-800 rounded-lg border ${
+								expandedProposal === proposal.id
 									? "border-blue-500"
 									: "border-gray-700"
-								} transition-all`}
+							} transition-all`}
 						>
 							<div
 								className="p-4 cursor-pointer flex justify-between items-center"

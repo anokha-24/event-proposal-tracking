@@ -46,10 +46,7 @@ export async function GET(request, { params }) {
 
 		return NextResponse.json(proposalsWithHistory);
 	} catch (error) {
-		console.error(
-			`Error fetching proposals for user ${userId}:`,
-			error,
-		);
+		console.error(`Error fetching proposals for user ${userId}:`, error);
 		return new NextResponse(
 			JSON.stringify({ error: "Failed to fetch proposals" }),
 			{
@@ -58,4 +55,4 @@ export async function GET(request, { params }) {
 			},
 		);
 	}
-} 
+}

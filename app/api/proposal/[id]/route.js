@@ -1,5 +1,11 @@
 import { db } from "@/app/firebase/firebase"; // make sure to check for db too
-import { doc, getDoc, updateDoc, serverTimestamp, deleteDoc } from "firebase/firestore";
+import {
+	doc,
+	getDoc,
+	updateDoc,
+	serverTimestamp,
+	deleteDoc,
+} from "firebase/firestore";
 import { NextRequest, NextResponse } from "next/server";
 
 /**

@@ -53,7 +53,10 @@ const formSchema = z.object({
 		.string()
 		.min(5, "Resource person details are required"),
 	isResourcePersonPaid: z.boolean(),
-	resourcePersonPayment: z.number().min(0, "Payment cannot be negative").optional(),
+	resourcePersonPayment: z
+		.number()
+		.min(0, "Payment cannot be negative")
+		.optional(),
 	externalResources: z.string().optional(),
 	additionalRequirements: z.string().optional(),
 	targetAudience: z.string().optional(),
@@ -77,12 +80,9 @@ export default function AddProposalContent() {
 			if (user) {
 				setIsAuthenticated(true);
 				try {
-					const { user: userData } = await apiRequest(
-						`/api/user/${user.uid}`,
-						{
-							method: "GET",
-						},
-					);
+					const { user: userData } = await apiRequest(`/api/user/${user.uid}`, {
+						method: "GET",
+					});
 					const department = userData?.department;
 					const fullUser = { ...user, department: department || "" };
 					setUser(fullUser);
@@ -171,13 +171,10 @@ export default function AddProposalContent() {
 				setIsSubmitting(false);
 				return;
 			}
-			
-			const { user: userData } = await apiRequest(
-				`/api/user/${user.uid}`,
-				{
-					method: "GET",
-				},
-			);
+
+			const { user: userData } = await apiRequest(`/api/user/${user.uid}`, {
+				method: "GET",
+			});
 
 			const currentReviewerObj = reviewers.find(
 				(r) => r.id === selectedReviewer,

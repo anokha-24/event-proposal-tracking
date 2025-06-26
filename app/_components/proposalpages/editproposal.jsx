@@ -10,7 +10,7 @@ import {
 	serverTimestamp,
 	orderBy,
 } from "firebase/firestore";
-import { AlertCircle, } from "lucide-react";
+import { AlertCircle } from "lucide-react";
 import { db } from "../../firebase/firebase";
 import { useRouter } from "next/navigation";
 import { getProposalById } from "../../api/proposalService";
@@ -135,7 +135,10 @@ export default function EditProposalContent({ proposalId, onBack }) {
 					...proposalThread,
 					id: proposalId,
 					expectedIncome: proposalThread.expectedIncome || 0,
-					expectedExpense: proposalThread.expectedExpense || proposalThread.estimatedBudget || 0,
+					expectedExpense:
+						proposalThread.expectedExpense ||
+						proposalThread.estimatedBudget ||
+						0,
 					isResourcePersonPaid: proposalThread.isResourcePersonPaid || false,
 					resourcePersonPayment: proposalThread.resourcePersonPayment || 0,
 					additionalRequirements:
@@ -302,7 +305,7 @@ export default function EditProposalContent({ proposalId, onBack }) {
 			}
 
 			// Remove the id field before saving
-			const { id, ...proposalWithoutId } = updatedProposal;
+			// const { id, ...proposalWithoutId } = updatedProposal;
 
 			// Update the proposal document
 			await fetch(`/api/proposal/${proposalId}`, {
@@ -341,6 +344,7 @@ export default function EditProposalContent({ proposalId, onBack }) {
 						<h3 className="font-semibold text-white mb-2">Error</h3>
 						<p>{error}</p>
 						<button
+							type="button"
 							onClick={onBack}
 							className="mt-4 px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-md transition"
 						>
@@ -364,6 +368,7 @@ export default function EditProposalContent({ proposalId, onBack }) {
 							or you are not the owner.
 						</p>
 						<button
+							type="button"
 							onClick={onBack}
 							className="mt-4 px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-md transition"
 						>
@@ -406,9 +411,7 @@ export default function EditProposalContent({ proposalId, onBack }) {
 
 					<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 						<div>
-							<label className="block text-sm font-medium mb-2">
-								Event Type *
-							</label>
+							<p className="block text-sm font-medium mb-2">Event Type *</p>
 							<div className="flex items-center space-x-4">
 								<label className="inline-flex items-center">
 									<input
@@ -446,9 +449,9 @@ export default function EditProposalContent({ proposalId, onBack }) {
 						</div>
 
 						<div>
-							<label className="block text-sm font-medium mb-2">
+							<p className="block text-sm font-medium mb-2">
 								Technical Category *
-							</label>
+							</p>
 							<div className="flex items-center space-x-4">
 								<label className="inline-flex items-center">
 									<input
@@ -485,7 +488,7 @@ export default function EditProposalContent({ proposalId, onBack }) {
 					</h2>
 					<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 						<div>
-							<label className="block text-sm font-medium mb-1">Title *</label>
+							<p className="block text-sm font-medium mb-1">Title *</p>
 							<input
 								type="text"
 								name="title"
@@ -497,9 +500,7 @@ export default function EditProposalContent({ proposalId, onBack }) {
 						</div>
 
 						<div>
-							<label className="block text-sm font-medium mb-1">
-								Duration *
-							</label>
+							<p className="block text-sm font-medium mb-1">Duration *</p>
 							<select
 								name="duration"
 								value={proposal.duration || ""}
@@ -522,9 +523,7 @@ export default function EditProposalContent({ proposalId, onBack }) {
 					</div>
 
 					<div className="mt-4">
-						<label className="block text-sm font-medium mb-1">
-							Description *
-						</label>
+						<p className="block text-sm font-medium mb-1">Description *</p>
 						<textarea
 							name="description"
 							value={proposal.description || ""}
@@ -536,9 +535,7 @@ export default function EditProposalContent({ proposalId, onBack }) {
 					</div>
 
 					<div className="mt-4">
-						<label className="block text-sm font-medium mb-1">
-							Target Audience *
-						</label>
+						<p className="block text-sm font-medium mb-1">Target Audience *</p>
 						<input
 							type="text"
 							name="targetAudience"
@@ -559,9 +556,9 @@ export default function EditProposalContent({ proposalId, onBack }) {
 
 					<div className="grid grid-cols-1 gap-6">
 						<div>
-							<label className="block text-sm font-medium mb-1">
+							<p className="block text-sm font-medium mb-1">
 								Resource Person Details *
-							</label>
+							</p>
 							<input
 								type="text"
 								name="resourcePersonDetails"
@@ -577,9 +574,9 @@ export default function EditProposalContent({ proposalId, onBack }) {
 						</div>
 
 						<div>
-							<label className="block text-sm font-medium mb-2">
+							<p className="block text-sm font-medium mb-2">
 								Will the resource person be paid? *
-							</label>
+							</p>
 							<div className="flex items-center space-x-4">
 								<label className="inline-flex items-center">
 									<input
@@ -617,9 +614,9 @@ export default function EditProposalContent({ proposalId, onBack }) {
 
 						{proposal.isResourcePersonPaid && (
 							<div>
-								<label className="block text-sm font-medium mb-1">
+								<p className="block text-sm font-medium mb-1">
 									Payment Amount (₹) *
-								</label>
+								</p>
 								<input
 									type="number"
 									name="resourcePersonPayment"
@@ -633,9 +630,9 @@ export default function EditProposalContent({ proposalId, onBack }) {
 						)}
 
 						<div>
-							<label className="block text-sm font-medium mb-1">
+							<p className="block text-sm font-medium mb-1">
 								External Resources Required *
-							</label>
+							</p>
 							<input
 								type="text"
 								name="externalResources"
@@ -659,9 +656,7 @@ export default function EditProposalContent({ proposalId, onBack }) {
 					</h2>
 
 					<div className="mb-4">
-						<label className="block text-sm font-medium mb-1">
-							Objectives *
-						</label>
+						<p className="block text-sm font-medium mb-1">Objectives *</p>
 						<textarea
 							name="objectives"
 							value={proposal.objectives || ""}
@@ -677,9 +672,9 @@ export default function EditProposalContent({ proposalId, onBack }) {
 					</div>
 
 					<div>
-						<label className="block text-sm font-medium mb-1">
+						<p className="block text-sm font-medium mb-1">
 							Expected Outcomes *
-						</label>
+						</p>
 						<textarea
 							name="outcomes"
 							value={proposal.outcomes || ""}
@@ -695,9 +690,9 @@ export default function EditProposalContent({ proposalId, onBack }) {
 					</div>
 
 					<div className="mt-4">
-						<label className="block text-sm font-medium mb-1">
+						<p className="block text-sm font-medium mb-1">
 							Participant Engagement Plan *
-						</label>
+						</p>
 						<textarea
 							name="participantEngagement"
 							value={proposal.participantEngagement || ""}
@@ -718,9 +713,9 @@ export default function EditProposalContent({ proposalId, onBack }) {
 
 					<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 						<div>
-							<label className="block text-sm font-medium mb-1">
+							<p className="block text-sm font-medium mb-1">
 								Registration Fee (₹) *
-							</label>
+							</p>
 							<input
 								type="number"
 								name="registrationFee"
@@ -733,9 +728,7 @@ export default function EditProposalContent({ proposalId, onBack }) {
 						</div>
 
 						<div>
-							<label className="block text-sm font-medium mb-1">
-								Maximum Seats *
-							</label>
+							<p className="block text-sm font-medium mb-1">Maximum Seats *</p>
 							<input
 								type="number"
 								name="maxSeats"
@@ -780,9 +773,9 @@ export default function EditProposalContent({ proposalId, onBack }) {
 							<h3 className="text-md font-semibold mb-3">Group Details</h3>
 							<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 								<div>
-									<label className="block text-sm font-medium mb-1">
+									<p className="block text-sm font-medium mb-1">
 										Max Group Members *
-									</label>
+									</p>
 									<input
 										type="number"
 										name="groupDetails.maxGroupMembers"
@@ -795,9 +788,7 @@ export default function EditProposalContent({ proposalId, onBack }) {
 									/>
 								</div>
 								<div>
-									<label className="block text-sm font-medium mb-1">
-										Fee Type *
-									</label>
+									<p className="block text-sm font-medium mb-1">Fee Type *</p>
 									<select
 										name="groupDetails.feeType"
 										value={proposal.groupDetails?.feeType || "perhead"}
@@ -825,7 +816,7 @@ export default function EditProposalContent({ proposalId, onBack }) {
 
 					<div className="grid grid-cols-1 md:grid-cols-3 gap-6">
 						<div>
-							<label className="block text-sm font-medium mb-1">Day 1</label>
+							<p className="block text-sm font-medium mb-1">Day 1</p>
 							<input
 								type="text"
 								name="preferredDays.day1"
@@ -837,7 +828,7 @@ export default function EditProposalContent({ proposalId, onBack }) {
 						</div>
 
 						<div>
-							<label className="block text-sm font-medium mb-1">Day 2</label>
+							<p className="block text-sm font-medium mb-1">Day 2</p>
 							<input
 								type="text"
 								name="preferredDays.day2"
@@ -849,7 +840,7 @@ export default function EditProposalContent({ proposalId, onBack }) {
 						</div>
 
 						<div>
-							<label className="block text-sm font-medium mb-1">Day 3</label>
+							<p className="block text-sm font-medium mb-1">Day 3</p>
 							<input
 								type="text"
 								name="preferredDays.day3"
@@ -873,9 +864,9 @@ export default function EditProposalContent({ proposalId, onBack }) {
 
 					<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 						<div>
-							<label className="block text-sm font-medium mb-1">
+							<p className="block text-sm font-medium mb-1">
 								Expected Income (₹) *
-							</label>
+							</p>
 							<input
 								type="number"
 								name="expectedIncome"
@@ -888,9 +879,9 @@ export default function EditProposalContent({ proposalId, onBack }) {
 						</div>
 
 						<div>
-							<label className="block text-sm font-medium mb-1">
+							<p className="block text-sm font-medium mb-1">
 								Expected Expense (₹) *
-							</label>
+							</p>
 							<input
 								type="number"
 								name="expectedExpense"
@@ -903,9 +894,9 @@ export default function EditProposalContent({ proposalId, onBack }) {
 						</div>
 
 						<div>
-							<label className="block text-sm font-medium mb-1">
+							<p className="block text-sm font-medium mb-1">
 								Potential Funding Source *
-							</label>
+							</p>
 							<input
 								type="text"
 								name="potentialFundingSource"
@@ -919,9 +910,9 @@ export default function EditProposalContent({ proposalId, onBack }) {
 					</div>
 
 					<div className="mt-4">
-						<label className="block text-sm font-medium mb-1">
+						<p className="block text-sm font-medium mb-1">
 							Additional Requirements
-						</label>
+						</p>
 						<textarea
 							name="additionalRequirements"
 							value={proposal.additionalRequirements || "nil"}
