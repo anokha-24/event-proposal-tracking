@@ -89,7 +89,7 @@ export default function AddProposalContent() {
 
 					if (department) {
 						const reviewersData = await apiRequest(
-							`/api/reviewer?level=0&department=${department}`,
+							`/api/reviewer?level=0&department=${department}&userId=${user.uid}`,
 						);
 						setReviewers(reviewersData);
 					}
@@ -1028,15 +1028,16 @@ export default function AddProposalContent() {
 							<h2 className="text-xl font-semibold mb-4 text-blue-400">
 								Select Reviewer
 							</h2>
-
-							<ComboboxReviewer
-								options={reviewers.map((r) => ({
-									value: r.id,
-									label: `${r.name} - [ ${r.email} ]`,
-								}))}
-								selected={selectedReviewer}
-								setSelected={setSelectedReviewer}
-							/>
+							<div className="w-full md:w-1/2">
+								<ComboboxReviewer
+									options={reviewers.map((r) => ({
+										value: r.id,
+										label: `${r.name} - [ ${r.email} ]`,
+									}))}
+									selected={selectedReviewer}
+									setSelected={setSelectedReviewer}
+								/>
+							</div>
 						</div>
 
 						{/* Submit Button */}

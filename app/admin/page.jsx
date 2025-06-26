@@ -51,8 +51,7 @@ const AdminPanel = () => {
 							return;
 						}
 
-						if (userData.role?.toLowerCase() !== "admin") {
-							// Not an admin, redirect to login
+						if (userData.user.role?.toLowerCase() !== "admin") {
 							router.push("/login");
 							return;
 						}
@@ -527,6 +526,7 @@ const ViewUsers = ({ users, setUsers, loading, setLoading }) => {
 		const fetchUsers = async () => {
 			setUsersLoading(true); // Use local loading state instead
 			try {
+				console.log("Fetching users");
 				const usersData = await apiRequest(`/api/user/getAll`, {
 					method: "GET",
 				});
