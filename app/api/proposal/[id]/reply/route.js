@@ -8,7 +8,7 @@ export async function POST(request, { params }) {
 	try {
 		const result = await addProposalReply(proposalId, replyData);
 
-		if (result.success) {
+		if (result === true) {
 			return NextResponse.json({ message: "Reply added successfully" });
 		} else {
 			return new NextResponse(
