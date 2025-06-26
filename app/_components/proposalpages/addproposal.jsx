@@ -21,6 +21,7 @@ import { Loader2 } from "lucide-react";
 import { auth } from "../../firebase/firebase";
 import apiRequest from "@/utils/apiRequest";
 import { ComboboxReviewer } from "@/components/ui/combo-box-reviewer";
+import { eventDurations, workshopDurations } from "../config";
 
 const formSchema = z.object({
 	title: z.string().min(5, "Title must be at least 5 characters"),
@@ -45,11 +46,17 @@ const formSchema = z.object({
 		day2: z.string().optional(),
 		day3: z.string().optional(),
 	}),
-	estimatedBudget: z.number().min(0, "Budget cannot be negative"),
+	expectedIncome: z.number().min(0, "Income cannot be negative"),
+	expectedExpense: z.number().min(0, "Expense cannot be negative"),
 	potentialFundingSource: z.string().optional(),
 	resourcePersonDetails: z
 		.string()
 		.min(5, "Resource person details are required"),
+	isResourcePersonPaid: z.boolean(),
+	resourcePersonPayment: z
+		.number()
+		.min(0, "Payment cannot be negative")
+		.optional(),
 	externalResources: z.string().optional(),
 	additionalRequirements: z.string().optional(),
 	targetAudience: z.string().optional(),
@@ -61,6 +68,7 @@ export default function AddProposalContent() {
 	const [error, setError] = useState("");
 	const [success, setSuccess] = useState("");
 	const [isAuthenticated, setIsAuthenticated] = useState(false);
+	const [authLoading, setAuthLoading] = useState(true);
 	const [user, setUser] = useState(null);
 	const [reviewers, setReviewers] = useState([]);
 	const [selectedReviewer, setSelectedReviewer] = useState(null);
@@ -68,47 +76,36 @@ export default function AddProposalContent() {
 
 	useEffect(() => {
 		const unsubscribe = auth.onAuthStateChanged(async (user) => {
+			setAuthLoading(true);
 			if (user) {
+				setIsAuthenticated(true);
 				try {
-					const userData = await apiRequest(`/api/user/${user.uid}`, {
+					const { user: userData } = await apiRequest(`/api/user/${user.uid}`, {
 						method: "GET",
 					});
-					if (userData) {
-						setUser({
-							...user,
-							department: userData.department || "",
-						});
-					} else {
-						setUser(user);
+					const department = userData?.department;
+					const fullUser = { ...user, department: department || "" };
+					setUser(fullUser);
+
+					if (department) {
+						const reviewersData = await apiRequest(
+							`/api/reviewer?level=0&department=${department}&userId=${user.uid}`,
+						);
+						setReviewers(reviewersData);
 					}
-					setIsAuthenticated(true);
 				} catch (err) {
 					console.error("Error fetching user data:", err);
-					setUser(user);
-					setIsAuthenticated(true);
+					setUser(user); // Set user without department if fetching extra data fails
 				}
 			} else {
 				setIsAuthenticated(false);
 				setUser(null);
 				setError("You must be logged in to submit a proposal");
 			}
+			setAuthLoading(false);
 		});
 		return () => unsubscribe();
 	}, []);
-
-	useEffect(() => {
-		const fetchAvailableReviewers = async () => {
-			const data = await apiRequest(
-				`/api/reviewer?level=0&department=${user.department}`,
-			);
-			console.log(data);
-			setReviewers(data);
-		};
-		if (user && user.department) {
-			console.log("User: ", user);
-			fetchAvailableReviewers();
-		}
-	}, [user]);
 
 	const scrollToTop = () => {
 		setTimeout(() => {
@@ -143,9 +140,12 @@ export default function AddProposalContent() {
 				day2: "",
 				day3: "",
 			},
-			estimatedBudget: 0,
+			expectedIncome: 0,
+			expectedExpense: 0,
 			potentialFundingSource: "",
 			resourcePersonDetails: "",
+			isResourcePersonPaid: false,
+			resourcePersonPayment: 0,
 			externalResources: "",
 			additionalRequirements: "",
 			targetAudience: "",
@@ -153,6 +153,12 @@ export default function AddProposalContent() {
 	});
 
 	const isIndividual = form.watch("isIndividual");
+	const isEvent = form.watch("isEvent");
+	const isResourcePersonPaid = form.watch("isResourcePersonPaid");
+
+	useEffect(() => {
+		form.setValue("duration", "");
+	}, [isEvent, form]);
 
 	async function onSubmit(values) {
 		setError("");
@@ -166,7 +172,7 @@ export default function AddProposalContent() {
 				return;
 			}
 
-			const userData = await apiRequest(`/api/user/${user.uid}`, {
+			const { user: userData } = await apiRequest(`/api/user/${user.uid}`, {
 				method: "GET",
 			});
 
@@ -216,7 +222,7 @@ export default function AddProposalContent() {
 
 			setSuccess("Proposal submitted successfully!");
 			form.reset();
-			router.refresh();
+			router.push("/user/proposals");
 		} catch (error) {
 			console.error("Error submitting proposal:", error);
 			setError("Failed to submit proposal. Please try again.");
@@ -244,7 +250,11 @@ export default function AddProposalContent() {
 				</Alert>
 			)}
 
-			{!isAuthenticated ? (
+			{authLoading ? (
+				<div className="p-6 bg-gray-800 rounded-lg shadow-md flex justify-center items-center h-96">
+					<Loader2 className="h-12 w-12 animate-spin text-blue-400" />
+				</div>
+			) : !isAuthenticated ? (
 				<div className="p-6 bg-gray-800 rounded-lg shadow-md">
 					<p className="text-white text-center">
 						Please log in to submit a proposal.
@@ -264,6 +274,111 @@ export default function AddProposalContent() {
 						onSubmit={form.handleSubmit(onSubmit)}
 						className="space-y-6 text-white"
 					>
+						{/* Type of Event */}
+						<div className="p-6 bg-gray-800 rounded-lg shadow-md">
+							<h2 className="text-xl font-semibold mb-4 text-blue-400">
+								Type of Event
+							</h2>
+
+							<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+								<div>
+									<FormLabel className="text-white block mb-2">
+										Event Type *
+									</FormLabel>
+									<FormField
+										control={form.control}
+										name="isEvent"
+										render={({ field }) => (
+											<FormItem className="flex items-center space-x-4">
+												<FormControl>
+													<div className="flex space-x-4">
+														<div>
+															<input
+																type="radio"
+																id="event-option"
+																checked={field.value === true}
+																onChange={() => field.onChange(true)}
+																className="form-radio"
+															/>
+															<label
+																htmlFor="event-option"
+																className="ml-2 text-white"
+															>
+																Event
+															</label>
+														</div>
+														<div>
+															<input
+																type="radio"
+																id="workshop-option"
+																checked={field.value === false}
+																onChange={() => field.onChange(false)}
+																className="form-radio"
+															/>
+															<label
+																htmlFor="workshop-option"
+																className="ml-2 text-white"
+															>
+																Workshop
+															</label>
+														</div>
+													</div>
+												</FormControl>
+											</FormItem>
+										)}
+									/>
+								</div>
+
+								<div>
+									<FormLabel className="text-white block mb-2">
+										Technical Category *
+									</FormLabel>
+									<FormField
+										control={form.control}
+										name="isTechnical"
+										render={({ field }) => (
+											<FormItem className="flex items-center space-x-4">
+												<FormControl>
+													<div className="flex space-x-4">
+														<div>
+															<input
+																type="radio"
+																id="technical-option"
+																checked={field.value === true}
+																onChange={() => field.onChange(true)}
+																className="form-radio"
+															/>
+															<label
+																htmlFor="technical-option"
+																className="ml-2 text-white"
+															>
+																Technical
+															</label>
+														</div>
+														<div>
+															<input
+																type="radio"
+																id="nontechnical-option"
+																checked={field.value === false}
+																onChange={() => field.onChange(false)}
+																className="form-radio"
+															/>
+															<label
+																htmlFor="nontechnical-option"
+																className="ml-2 text-white"
+															>
+																Non-Technical
+															</label>
+														</div>
+													</div>
+												</FormControl>
+											</FormItem>
+										)}
+									/>
+								</div>
+							</div>
+						</div>
+
 						{/* Basic Information */}
 						<div className="p-6 bg-gray-800 rounded-lg shadow-md">
 							<h2 className="text-xl font-semibold mb-4 text-blue-400">
@@ -295,11 +410,21 @@ export default function AddProposalContent() {
 										<FormItem>
 											<FormLabel className="text-white">Duration *</FormLabel>
 											<FormControl>
-												<Input
-													placeholder="e.g. 3 hours"
+												<select
 													className="w-full p-2 bg-gray-700 border border-gray-600 rounded-md text-white"
 													{...field}
-												/>
+												>
+													<option value="" disabled>
+														Select duration
+													</option>
+													{(isEvent ? eventDurations : workshopDurations).map(
+														(option) => (
+															<option key={option.value} value={option.value}>
+																{option.label}
+															</option>
+														),
+													)}
+												</select>
 											</FormControl>
 											<FormMessage className="text-red-400" />
 										</FormItem>
@@ -360,6 +485,83 @@ export default function AddProposalContent() {
 										</FormItem>
 									)}
 								/>
+
+								<div>
+									<FormLabel className="text-white block mb-2">
+										Will the resource person be paid? *
+									</FormLabel>
+									<FormField
+										control={form.control}
+										name="isResourcePersonPaid"
+										render={({ field }) => (
+											<FormItem className="flex items-center space-x-4">
+												<FormControl>
+													<div className="flex space-x-4">
+														<div>
+															<input
+																type="radio"
+																id="paid-yes"
+																checked={field.value === true}
+																onChange={() => field.onChange(true)}
+																className="form-radio"
+															/>
+															<label
+																htmlFor="paid-yes"
+																className="ml-2 text-white"
+															>
+																Yes
+															</label>
+														</div>
+														<div>
+															<input
+																type="radio"
+																id="paid-no"
+																checked={field.value === false}
+																onChange={() => field.onChange(false)}
+																className="form-radio"
+															/>
+															<label
+																htmlFor="paid-no"
+																className="ml-2 text-white"
+															>
+																No
+															</label>
+														</div>
+													</div>
+												</FormControl>
+											</FormItem>
+										)}
+									/>
+								</div>
+
+								{isResourcePersonPaid && (
+									<FormField
+										control={form.control}
+										name="resourcePersonPayment"
+										render={({ field }) => (
+											<FormItem>
+												<FormLabel className="text-white">
+													Payment Amount (₹) *
+												</FormLabel>
+												<FormControl>
+													<Input
+														type="number"
+														className="w-full p-2 bg-gray-700 border border-gray-600 rounded-md text-white"
+														{...field}
+														onChange={(e) =>
+															field.onChange(
+																e.target.value === ""
+																	? ""
+																	: Number(e.target.value),
+															)
+														}
+													/>
+												</FormControl>
+												<FormMessage className="text-red-400" />
+											</FormItem>
+										)}
+									/>
+								)}
 
 								<FormField
 									control={form.control}
@@ -643,111 +845,6 @@ export default function AddProposalContent() {
 							)}
 						</div>
 
-						{/* Type of Event */}
-						<div className="p-6 bg-gray-800 rounded-lg shadow-md">
-							<h2 className="text-xl font-semibold mb-4 text-blue-400">
-								Type of Event
-							</h2>
-
-							<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-								<div>
-									<FormLabel className="text-white block mb-2">
-										Event Type *
-									</FormLabel>
-									<FormField
-										control={form.control}
-										name="isEvent"
-										render={({ field }) => (
-											<FormItem className="flex items-center space-x-4">
-												<FormControl>
-													<div className="flex space-x-4">
-														<div>
-															<input
-																type="radio"
-																id="event-option"
-																checked={field.value === true}
-																onChange={() => field.onChange(true)}
-																className="form-radio"
-															/>
-															<label
-																htmlFor="event-option"
-																className="ml-2 text-white"
-															>
-																Event
-															</label>
-														</div>
-														<div>
-															<input
-																type="radio"
-																id="workshop-option"
-																checked={field.value === false}
-																onChange={() => field.onChange(false)}
-																className="form-radio"
-															/>
-															<label
-																htmlFor="workshop-option"
-																className="ml-2 text-white"
-															>
-																Workshop
-															</label>
-														</div>
-													</div>
-												</FormControl>
-											</FormItem>
-										)}
-									/>
-								</div>
-
-								<div>
-									<FormLabel className="text-white block mb-2">
-										Technical Category *
-									</FormLabel>
-									<FormField
-										control={form.control}
-										name="isTechnical"
-										render={({ field }) => (
-											<FormItem className="flex items-center space-x-4">
-												<FormControl>
-													<div className="flex space-x-4">
-														<div>
-															<input
-																type="radio"
-																id="technical-option"
-																checked={field.value === true}
-																onChange={() => field.onChange(true)}
-																className="form-radio"
-															/>
-															<label
-																htmlFor="technical-option"
-																className="ml-2 text-white"
-															>
-																Technical
-															</label>
-														</div>
-														<div>
-															<input
-																type="radio"
-																id="nontechnical-option"
-																checked={field.value === false}
-																onChange={() => field.onChange(false)}
-																className="form-radio"
-															/>
-															<label
-																htmlFor="nontechnical-option"
-																className="ml-2 text-white"
-															>
-																Non-Technical
-															</label>
-														</div>
-													</div>
-												</FormControl>
-											</FormItem>
-										)}
-									/>
-								</div>
-							</div>
-						</div>
-
 						{/* Scheduling */}
 						<div className="p-6 bg-gray-800 rounded-lg shadow-md">
 							<h2 className="text-xl font-semibold mb-4 text-blue-400">
@@ -767,7 +864,7 @@ export default function AddProposalContent() {
 											<FormLabel className="text-white">Day 1</FormLabel>
 											<FormControl>
 												<Input
-													placeholder="e.g. 10:00 AM - 1:00 PM"
+													placeholder="e.g. 10:00 FN - 1:00 AN"
 													className="w-full p-2 bg-gray-700 border border-gray-600 rounded-md text-white"
 													{...field}
 												/>
@@ -785,7 +882,7 @@ export default function AddProposalContent() {
 											<FormLabel className="text-white">Day 2</FormLabel>
 											<FormControl>
 												<Input
-													placeholder="e.g. 2:00 PM - 5:00 PM"
+													placeholder="e.g. 2:00 AN - 5:00 AN"
 													className="w-full p-2 bg-gray-700 border border-gray-600 rounded-md text-white"
 													{...field}
 												/>
@@ -803,7 +900,7 @@ export default function AddProposalContent() {
 											<FormLabel className="text-white">Day 3</FormLabel>
 											<FormControl>
 												<Input
-													placeholder="e.g. 11:00 AM - 2:00 PM"
+													placeholder="e.g. 11:00 FN - 2:00 AN"
 													className="w-full p-2 bg-gray-700 border border-gray-600 rounded-md text-white"
 													{...field}
 												/>
@@ -827,11 +924,37 @@ export default function AddProposalContent() {
 							<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 								<FormField
 									control={form.control}
-									name="estimatedBudget"
+									name="expectedIncome"
 									render={({ field }) => (
 										<FormItem>
 											<FormLabel className="text-white">
-												Estimated Budget (₹) *
+												Expected Income (₹) *
+											</FormLabel>
+											<FormControl>
+												<Input
+													type="number"
+													className="w-full p-2 bg-gray-700 border border-gray-600 rounded-md text-white"
+													{...field}
+													onChange={(e) =>
+														field.onChange(
+															e.target.value === ""
+																? ""
+																: Number(e.target.value),
+														)
+													}
+												/>
+											</FormControl>
+											<FormMessage className="text-red-400" />
+										</FormItem>
+									)}
+								/>
+								<FormField
+									control={form.control}
+									name="expectedExpense"
+									render={({ field }) => (
+										<FormItem>
+											<FormLabel className="text-white">
+												Expected Expense (₹) *
 											</FormLabel>
 											<FormControl>
 												<Input
@@ -902,15 +1025,16 @@ export default function AddProposalContent() {
 							<h2 className="text-xl font-semibold mb-4 text-blue-400">
 								Select Reviewer
 							</h2>
-
-							<ComboboxReviewer
-								options={reviewers.map((r) => ({
-									value: r.id,
-									label: `${r.name} - [ ${r.email} ]`,
-								}))}
-								selected={selectedReviewer}
-								setSelected={setSelectedReviewer}
-							/>
+							<div className="w-full md:w-1/2">
+								<ComboboxReviewer
+									options={reviewers.map((r) => ({
+										value: r.id,
+										label: `${r.name} - [ ${r.email} ]`,
+									}))}
+									selected={selectedReviewer}
+									setSelected={setSelectedReviewer}
+								/>
+							</div>
 						</div>
 
 						{/* Submit Button */}

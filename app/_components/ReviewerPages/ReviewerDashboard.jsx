@@ -151,7 +151,7 @@ export default function ReviewerDashboardContent({ onNavigate }) {
 				const res = await apiRequest(`/api/reviewer/${reviewerId}/proposals`, {
 					method: "GET",
 				});
-				proposals = res.proposals;
+				proposals = res.uniqueProposals;
 			}
 
 			setStatistics({
@@ -278,7 +278,7 @@ export default function ReviewerDashboardContent({ onNavigate }) {
 
 							<div
 								className="bg-purple-900/30 p-6 rounded-lg border border-purple-700 relative cursor-pointer hover:bg-purple-800 transition-all duration-300"
-								onClick={() => handleNavigation("reviewed-proposals")}
+								onClick={() => handleNavigation("view-proposals")}
 							>
 								<div className="flex justify-between items-start">
 									<h3 className="text-purple-300 text-lg font-medium mb-2">

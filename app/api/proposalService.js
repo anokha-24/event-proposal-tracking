@@ -137,7 +137,7 @@ const updateProposal = async (proposalId, proposalData) => {
 /**
  * Add reply to a proposal (for proposers)
  */
-const addProposalReply = async (proposalId, replyText, proposerName) => {
+const addProposalReply = async (proposalId, replyData) => {
 	try {
 		const proposalRef = doc(db, "Proposals", proposalId);
 		const proposalSnap = await getDoc(proposalRef);
@@ -147,16 +147,21 @@ const addProposalReply = async (proposalId, replyText, proposerName) => {
 		}
 
 		const proposalData = proposalSnap.data();
-		const currentReplies = proposalData.replies || [];
+		const currentReplies = proposalData.comments || [];
 
 		const newReply = {
-			text: replyText,
-			proposerName: proposerName,
-			timestamp: new Date(),
+			text: replyData.text,
+			timestamp: replyData.timestamp,
+			authorId: replyData.authorId,
+			authorName: replyData.authorName,
+			authorType: replyData.authorType,
+			version: replyData.version,
 		};
 
+		console.log(newReply);
+
 		await updateDoc(proposalRef, {
-			replies: [...currentReplies, newReply],
+			comments: [...currentReplies, newReply],
 			updatedAt: serverTimestamp(),
 		});
 

@@ -34,10 +34,12 @@ export function ComboboxReviewer({
 					aria-expanded={open}
 					className="w-full justify-between bg-gray-800 border-gray-600 text-white"
 				>
-					{selected
-						? options.find((option) => option.value === selected)?.label
-						: placeholder}
-					<ChevronsUpDown className="ml-2 h-4 w-4 opacity-50" />
+					<span className="truncate">
+						{selected
+							? options.find((option) => option.value === selected)?.label
+							: placeholder}
+					</span>
+					<ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
 				</Button>
 			</PopoverTrigger>
 
@@ -58,10 +60,10 @@ export function ComboboxReviewer({
 									}}
 									className="bg-gray-800 text-white hover:bg-gray-700 cursor-pointer"
 								>
-									{option.label}
+									<span className="truncate">{option.label}</span>
 									<Check
 										className={cn(
-											"ml-auto h-4 w-4",
+											"ml-auto h-4 w-4 shrink-0",
 											selected === option.value ? "opacity-100" : "opacity-0",
 										)}
 									/>

@@ -11,14 +11,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { PasswordInput } from "@/components/ui/password-input";
 import { Combobox } from "@/components/ui/combo-box";
 import { saveUserToFirestore } from "../api/userService";
-
-const departments = [
-	{ value: "CSE", label: "CSE" },
-	{ value: "ECE", label: "ECE" },
-	{ value: "EEE", label: "EEE" },
-	{ value: "MECH", label: "MECH" },
-	{ value: "CIVIL", label: "CIVIL" },
-];
+import { departments } from "@/app/_components/config";
 
 const SignUp = () => {
 	const [name, setName] = useState("");

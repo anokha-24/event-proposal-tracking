@@ -10,10 +10,11 @@ import {
 	serverTimestamp,
 	orderBy,
 } from "firebase/firestore";
-import { AlertCircle, } from "lucide-react";
+import { AlertCircle } from "lucide-react";
 import { db } from "../../firebase/firebase";
 import { useRouter } from "next/navigation";
 import { getProposalById } from "../../api/proposalService";
+import { eventDurations, workshopDurations } from "../config";
 
 export default function EditProposalContent({ proposalId, onBack }) {
 	const router = useRouter();
@@ -38,9 +39,12 @@ export default function EditProposalContent({ proposalId, onBack }) {
 			day2: "",
 			day3: "",
 		},
-		estimatedBudget: "",
+		expectedIncome: "",
+		expectedExpense: "",
 		potentialFundingSource: "",
 		resourcePersonDetails: "",
+		isResourcePersonPaid: false,
+		resourcePersonPayment: "",
 		externalResources: "",
 		additionalRequirements: "nil",
 		targetAudience: "",
@@ -130,6 +134,13 @@ export default function EditProposalContent({ proposalId, onBack }) {
 				setProposal({
 					...proposalThread,
 					id: proposalId,
+					expectedIncome: proposalThread.expectedIncome || 0,
+					expectedExpense:
+						proposalThread.expectedExpense ||
+						proposalThread.estimatedBudget ||
+						0,
+					isResourcePersonPaid: proposalThread.isResourcePersonPaid || false,
+					resourcePersonPayment: proposalThread.resourcePersonPayment || 0,
 					additionalRequirements:
 						proposalThread.additionalRequirements || "nil",
 					targetAudience: proposalThread.targetAudience || "",
@@ -294,7 +305,7 @@ export default function EditProposalContent({ proposalId, onBack }) {
 			}
 
 			// Remove the id field before saving
-			const { id, ...proposalWithoutId } = updatedProposal;
+			// const { id, ...proposalWithoutId } = updatedProposal;
 
 			// Update the proposal document
 			await fetch(`/api/proposal/${proposalId}`, {
@@ -305,25 +316,12 @@ export default function EditProposalContent({ proposalId, onBack }) {
 				body: JSON.stringify(updatedProposal),
 			});
 
-			setSuccess(
-				isCreatingNewVersion
-					? `Proposal updated successfully! v${newVersion}`
-					: `Proposal updated successfully!`,
-			);
-
-			// Update local state
-			setProposal((prev) => ({
-				...prev,
-				...updatedProposal,
-			}));
-
-			// Redirect back after delay
-			setTimeout(() => {
-				if (onBack) onBack();
-			}, 500);
+			setSuccess("Proposal updated successfully!");
+			setLoading(false);
+			router.push("/user/proposals");
 		} catch (err) {
-			console.error("Error updating proposal:", err);
-			setError("Failed to update proposal: " + err.message);
+			console.error("Error submitting proposal:", err);
+			setError("Failed to submit proposal. Please try again.");
 		} finally {
 			setLoading(false);
 		}
@@ -346,6 +344,7 @@ export default function EditProposalContent({ proposalId, onBack }) {
 						<h3 className="font-semibold text-white mb-2">Error</h3>
 						<p>{error}</p>
 						<button
+							type="button"
 							onClick={onBack}
 							className="mt-4 px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-md transition"
 						>
@@ -369,6 +368,7 @@ export default function EditProposalContent({ proposalId, onBack }) {
 							or you are not the owner.
 						</p>
 						<button
+							type="button"
 							onClick={onBack}
 							className="mt-4 px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-md transition"
 						>
@@ -403,6 +403,84 @@ export default function EditProposalContent({ proposalId, onBack }) {
 			)}
 
 			<form onSubmit={handleSubmit} className="space-y-6 text-white">
+				{/* Type of Event Section */}
+				<div className="p-6 bg-gray-800 rounded-lg shadow-md">
+					<h2 className="text-xl font-semibold mb-4 text-blue-400">
+						Type of Event
+					</h2>
+
+					<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+						<div>
+							<p className="block text-sm font-medium mb-2">Event Type *</p>
+							<div className="flex items-center space-x-4">
+								<label className="inline-flex items-center">
+									<input
+										type="radio"
+										name="isEvent"
+										checked={proposal.isEvent === true}
+										onChange={() =>
+											setProposal((prev) => ({
+												...prev,
+												isEvent: true,
+												duration: "",
+											}))
+										}
+										className="form-radio"
+									/>
+									<span className="ml-2">Event</span>
+								</label>
+								<label className="inline-flex items-center">
+									<input
+										type="radio"
+										name="isEvent"
+										checked={proposal.isEvent === false}
+										onChange={() =>
+											setProposal((prev) => ({
+												...prev,
+												isEvent: false,
+												duration: "",
+											}))
+										}
+										className="form-radio"
+									/>
+									<span className="ml-2">Workshop</span>
+								</label>
+							</div>
+						</div>
+
+						<div>
+							<p className="block text-sm font-medium mb-2">
+								Technical Category *
+							</p>
+							<div className="flex items-center space-x-4">
+								<label className="inline-flex items-center">
+									<input
+										type="radio"
+										name="isTechnical"
+										checked={proposal.isTechnical === true}
+										onChange={() =>
+											setProposal((prev) => ({ ...prev, isTechnical: true }))
+										}
+										className="form-radio"
+									/>
+									<span className="ml-2">Technical</span>
+								</label>
+								<label className="inline-flex items-center">
+									<input
+										type="radio"
+										name="isTechnical"
+										checked={proposal.isTechnical === false}
+										onChange={() =>
+											setProposal((prev) => ({ ...prev, isTechnical: false }))
+										}
+										className="form-radio"
+									/>
+									<span className="ml-2">Non-Technical</span>
+								</label>
+							</div>
+						</div>
+					</div>
+				</div>
 				{/* Basic Information Section */}
 				<div className="p-6 bg-gray-800 rounded-lg shadow-md">
 					<h2 className="text-xl font-semibold mb-4 text-blue-400">
@@ -410,7 +488,7 @@ export default function EditProposalContent({ proposalId, onBack }) {
 					</h2>
 					<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 						<div>
-							<label className="block text-sm font-medium mb-1">Title *</label>
+							<p className="block text-sm font-medium mb-1">Title *</p>
 							<input
 								type="text"
 								name="title"
@@ -422,25 +500,30 @@ export default function EditProposalContent({ proposalId, onBack }) {
 						</div>
 
 						<div>
-							<label className="block text-sm font-medium mb-1">
-								Duration *
-							</label>
-							<input
-								type="text"
+							<p className="block text-sm font-medium mb-1">Duration *</p>
+							<select
 								name="duration"
 								value={proposal.duration || ""}
 								onChange={handleChange}
-								placeholder="e.g. 3 hours"
 								className="w-full p-2 bg-gray-700 border border-gray-600 rounded-md text-white"
 								required
-							/>
+							>
+								<option value="" disabled>
+									Select duration
+								</option>
+								{(proposal.isEvent ? eventDurations : workshopDurations).map(
+									(option) => (
+										<option key={option.value} value={option.value}>
+											{option.label}
+										</option>
+									),
+								)}
+							</select>
 						</div>
 					</div>
 
 					<div className="mt-4">
-						<label className="block text-sm font-medium mb-1">
-							Description *
-						</label>
+						<p className="block text-sm font-medium mb-1">Description *</p>
 						<textarea
 							name="description"
 							value={proposal.description || ""}
@@ -452,9 +535,7 @@ export default function EditProposalContent({ proposalId, onBack }) {
 					</div>
 
 					<div className="mt-4">
-						<label className="block text-sm font-medium mb-1">
-							Target Audience *
-						</label>
+						<p className="block text-sm font-medium mb-1">Target Audience *</p>
 						<input
 							type="text"
 							name="targetAudience"
@@ -475,9 +556,9 @@ export default function EditProposalContent({ proposalId, onBack }) {
 
 					<div className="grid grid-cols-1 gap-6">
 						<div>
-							<label className="block text-sm font-medium mb-1">
+							<p className="block text-sm font-medium mb-1">
 								Resource Person Details *
-							</label>
+							</p>
 							<input
 								type="text"
 								name="resourcePersonDetails"
@@ -493,9 +574,65 @@ export default function EditProposalContent({ proposalId, onBack }) {
 						</div>
 
 						<div>
-							<label className="block text-sm font-medium mb-1">
+							<p className="block text-sm font-medium mb-2">
+								Will the resource person be paid? *
+							</p>
+							<div className="flex items-center space-x-4">
+								<label className="inline-flex items-center">
+									<input
+										type="radio"
+										name="isResourcePersonPaid"
+										checked={proposal.isResourcePersonPaid === true}
+										onChange={() =>
+											setProposal((prev) => ({
+												...prev,
+												isResourcePersonPaid: true,
+											}))
+										}
+										className="form-radio"
+									/>
+									<span className="ml-2">Yes</span>
+								</label>
+								<label className="inline-flex items-center">
+									<input
+										type="radio"
+										name="isResourcePersonPaid"
+										checked={proposal.isResourcePersonPaid === false}
+										onChange={() =>
+											setProposal((prev) => ({
+												...prev,
+												isResourcePersonPaid: false,
+												resourcePersonPayment: 0,
+											}))
+										}
+										className="form-radio"
+									/>
+									<span className="ml-2">No</span>
+								</label>
+							</div>
+						</div>
+
+						{proposal.isResourcePersonPaid && (
+							<div>
+								<p className="block text-sm font-medium mb-1">
+									Payment Amount (₹) *
+								</p>
+								<input
+									type="number"
+									name="resourcePersonPayment"
+									value={proposal.resourcePersonPayment || ""}
+									onChange={handleChange}
+									min="0"
+									className="w-full p-2 bg-gray-700 border border-gray-600 rounded-md text-white"
+									required
+								/>
+							</div>
+						)}
+
+						<div>
+							<p className="block text-sm font-medium mb-1">
 								External Resources Required *
-							</label>
+							</p>
 							<input
 								type="text"
 								name="externalResources"
@@ -519,9 +656,7 @@ export default function EditProposalContent({ proposalId, onBack }) {
 					</h2>
 
 					<div className="mb-4">
-						<label className="block text-sm font-medium mb-1">
-							Objectives *
-						</label>
+						<p className="block text-sm font-medium mb-1">Objectives *</p>
 						<textarea
 							name="objectives"
 							value={proposal.objectives || ""}
@@ -537,9 +672,9 @@ export default function EditProposalContent({ proposalId, onBack }) {
 					</div>
 
 					<div>
-						<label className="block text-sm font-medium mb-1">
+						<p className="block text-sm font-medium mb-1">
 							Expected Outcomes *
-						</label>
+						</p>
 						<textarea
 							name="outcomes"
 							value={proposal.outcomes || ""}
@@ -555,9 +690,9 @@ export default function EditProposalContent({ proposalId, onBack }) {
 					</div>
 
 					<div className="mt-4">
-						<label className="block text-sm font-medium mb-1">
+						<p className="block text-sm font-medium mb-1">
 							Participant Engagement Plan *
-						</label>
+						</p>
 						<textarea
 							name="participantEngagement"
 							value={proposal.participantEngagement || ""}
@@ -578,9 +713,9 @@ export default function EditProposalContent({ proposalId, onBack }) {
 
 					<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 						<div>
-							<label className="block text-sm font-medium mb-1">
+							<p className="block text-sm font-medium mb-1">
 								Registration Fee (₹) *
-							</label>
+							</p>
 							<input
 								type="number"
 								name="registrationFee"
@@ -593,9 +728,7 @@ export default function EditProposalContent({ proposalId, onBack }) {
 						</div>
 
 						<div>
-							<label className="block text-sm font-medium mb-1">
-								Maximum Seats *
-							</label>
+							<p className="block text-sm font-medium mb-1">Maximum Seats *</p>
 							<input
 								type="number"
 								name="maxSeats"
@@ -640,9 +773,9 @@ export default function EditProposalContent({ proposalId, onBack }) {
 							<h3 className="text-md font-semibold mb-3">Group Details</h3>
 							<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 								<div>
-									<label className="block text-sm font-medium mb-1">
+									<p className="block text-sm font-medium mb-1">
 										Max Group Members *
-									</label>
+									</p>
 									<input
 										type="number"
 										name="groupDetails.maxGroupMembers"
@@ -655,9 +788,7 @@ export default function EditProposalContent({ proposalId, onBack }) {
 									/>
 								</div>
 								<div>
-									<label className="block text-sm font-medium mb-1">
-										Fee Type *
-									</label>
+									<p className="block text-sm font-medium mb-1">Fee Type *</p>
 									<select
 										name="groupDetails.feeType"
 										value={proposal.groupDetails?.feeType || "perhead"}
@@ -674,79 +805,6 @@ export default function EditProposalContent({ proposalId, onBack }) {
 					)}
 				</div>
 
-				{/* Type of Event Section */}
-				<div className="p-6 bg-gray-800 rounded-lg shadow-md">
-					<h2 className="text-xl font-semibold mb-4 text-blue-400">
-						Type of Event
-					</h2>
-
-					<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-						<div>
-							<label className="block text-sm font-medium mb-2">
-								Event Type *
-							</label>
-							<div className="flex items-center space-x-4">
-								<label className="inline-flex items-center">
-									<input
-										type="radio"
-										name="isEvent"
-										checked={proposal.isEvent === true}
-										onChange={() =>
-											setProposal((prev) => ({ ...prev, isEvent: true }))
-										}
-										className="form-radio"
-									/>
-									<span className="ml-2">Event</span>
-								</label>
-								<label className="inline-flex items-center">
-									<input
-										type="radio"
-										name="isEvent"
-										checked={proposal.isEvent === false}
-										onChange={() =>
-											setProposal((prev) => ({ ...prev, isEvent: false }))
-										}
-										className="form-radio"
-									/>
-									<span className="ml-2">Workshop</span>
-								</label>
-							</div>
-						</div>
-
-						<div>
-							<label className="block text-sm font-medium mb-2">
-								Technical Category *
-							</label>
-							<div className="flex items-center space-x-4">
-								<label className="inline-flex items-center">
-									<input
-										type="radio"
-										name="isTechnical"
-										checked={proposal.isTechnical === true}
-										onChange={() =>
-											setProposal((prev) => ({ ...prev, isTechnical: true }))
-										}
-										className="form-radio"
-									/>
-									<span className="ml-2">Technical</span>
-								</label>
-								<label className="inline-flex items-center">
-									<input
-										type="radio"
-										name="isTechnical"
-										checked={proposal.isTechnical === false}
-										onChange={() =>
-											setProposal((prev) => ({ ...prev, isTechnical: false }))
-										}
-										className="form-radio"
-									/>
-									<span className="ml-2">Non-Technical</span>
-								</label>
-							</div>
-						</div>
-					</div>
-				</div>
-
 				{/* Scheduling Section */}
 				<div className="p-6 bg-gray-800 rounded-lg shadow-md">
 					<h2 className="text-xl font-semibold mb-4 text-blue-400">
@@ -758,37 +816,37 @@ export default function EditProposalContent({ proposalId, onBack }) {
 
 					<div className="grid grid-cols-1 md:grid-cols-3 gap-6">
 						<div>
-							<label className="block text-sm font-medium mb-1">Day 1</label>
+							<p className="block text-sm font-medium mb-1">Day 1</p>
 							<input
 								type="text"
 								name="preferredDays.day1"
 								value={proposal.preferredDays?.day1 || ""}
 								onChange={handleChange}
-								placeholder="e.g. 10:00 AM - 1:00 PM"
+								placeholder="e.g. 10:00 FN - 1:00 AN"
 								className="w-full p-2 bg-gray-700 border border-gray-600 rounded-md text-white"
 							/>
 						</div>
 
 						<div>
-							<label className="block text-sm font-medium mb-1">Day 2</label>
+							<p className="block text-sm font-medium mb-1">Day 2</p>
 							<input
 								type="text"
 								name="preferredDays.day2"
 								value={proposal.preferredDays?.day2 || ""}
 								onChange={handleChange}
-								placeholder="e.g. 2:00 PM - 5:00 PM"
+								placeholder="e.g. 2:00 AN - 5:00 AN"
 								className="w-full p-2 bg-gray-700 border border-gray-600 rounded-md text-white"
 							/>
 						</div>
 
 						<div>
-							<label className="block text-sm font-medium mb-1">Day 3</label>
+							<p className="block text-sm font-medium mb-1">Day 3</p>
 							<input
 								type="text"
 								name="preferredDays.day3"
 								value={proposal.preferredDays?.day3 || ""}
 								onChange={handleChange}
-								placeholder="e.g. 11:00 AM - 2:00 PM"
+								placeholder="e.g. 11:00 FN - 2:00 AN"
 								className="w-full p-2 bg-gray-700 border border-gray-600 rounded-md text-white"
 							/>
 						</div>
@@ -806,13 +864,13 @@ export default function EditProposalContent({ proposalId, onBack }) {
 
 					<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 						<div>
-							<label className="block text-sm font-medium mb-1">
-								Estimated Budget (₹) *
-							</label>
+							<p className="block text-sm font-medium mb-1">
+								Expected Income (₹) *
+							</p>
 							<input
 								type="number"
-								name="estimatedBudget"
-								value={proposal.estimatedBudget || ""}
+								name="expectedIncome"
+								value={proposal.expectedIncome || ""}
 								onChange={handleChange}
 								min="0"
 								className="w-full p-2 bg-gray-700 border border-gray-600 rounded-md text-white"
@@ -821,9 +879,24 @@ export default function EditProposalContent({ proposalId, onBack }) {
 						</div>
 
 						<div>
-							<label className="block text-sm font-medium mb-1">
+							<p className="block text-sm font-medium mb-1">
+								Expected Expense (₹) *
+							</p>
+							<input
+								type="number"
+								name="expectedExpense"
+								value={proposal.expectedExpense || ""}
+								onChange={handleChange}
+								min="0"
+								className="w-full p-2 bg-gray-700 border border-gray-600 rounded-md text-white"
+								required
+							/>
+						</div>
+
+						<div>
+							<p className="block text-sm font-medium mb-1">
 								Potential Funding Source *
-							</label>
+							</p>
 							<input
 								type="text"
 								name="potentialFundingSource"
@@ -837,9 +910,9 @@ export default function EditProposalContent({ proposalId, onBack }) {
 					</div>
 
 					<div className="mt-4">
-						<label className="block text-sm font-medium mb-1">
+						<p className="block text-sm font-medium mb-1">
 							Additional Requirements
-						</label>
+						</p>
 						<textarea
 							name="additionalRequirements"
 							value={proposal.additionalRequirements || "nil"}
