@@ -136,6 +136,28 @@ export default function ReviewProposalsPage() {
 		);
 	};
 
+	const renderReviewedProposals = (status) => {
+		const filteredProposals = proposals.filter(
+			(p) => p.status.toLowerCase() === status.toLowerCase(),
+		);
+
+		if (filteredProposals.length === 0) {
+			return (
+				<div className="text-center text-gray-500 py-16">
+					No reviewed proposals found.
+				</div>
+			);
+		}
+
+		return (
+			<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+				{filteredProposals.map((proposal) => (
+					<ProposalCard proposal={proposal} key={proposal.id} />
+				))}
+			</div>
+		);
+	};
+
 	if (loading) {
 		return (
 			<div className="flex justify-center items-center h-full">
@@ -162,6 +184,12 @@ export default function ReviewProposalsPage() {
 						className="relative inline-flex items-center justify-center whitespace-nowrap rounded-full px-6 py-2 text-sm font-medium text-slate-300 transition-all focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-md"
 					>
 						Pending
+					</TabsTrigger>
+					<TabsTrigger
+						value="reviewed"
+						className="relative inline-flex items-center justify-center whitespace-nowrap rounded-full px-6 py-2 text-sm font-medium text-slate-300 transition-all focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-md"
+					>
+						Reviewed
 					</TabsTrigger>
 					<TabsTrigger
 						value="approved"
@@ -197,6 +225,9 @@ export default function ReviewProposalsPage() {
 				</TabsContent>
 				<TabsContent value="pending" className="mt-4">
 					{renderProposalsByStatus("pending")}
+				</TabsContent>
+				<TabsContent value="reviewed" className="mt-4">
+					{renderReviewedProposals("reviewed")}
 				</TabsContent>
 				<TabsContent value="approved" className="mt-4">
 					{renderProposalsByStatus("approved")}
