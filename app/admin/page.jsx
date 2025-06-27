@@ -6,7 +6,7 @@ import { signOut } from "firebase/auth";
 import { auth } from "@/app/firebase/firebase";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"; 
 import {
 	UserIcon,
 	UsersIcon,
@@ -20,7 +20,7 @@ import { Input } from "@/components/ui/input";
 import apiRequest from "@/utils/apiRequest";
 import { ComboboxLevel } from "@/components/ui/combo-box-level";
 import { departments } from "@/app/_components/config";
-
+//formatted
 const levels = [
 	{ value: 0, label: "Level 0" },
 	{ value: 1, label: "Level 1" },
@@ -593,12 +593,13 @@ const ViewUsers = ({ users, setUsers, loading, setLoading }) => {
 
 	// Helper function to get display role
 	const getDisplayRole = (role, level) => {
-	if (!role) return "Unknown";
-	const lowerRole = role.toLowerCase();
-	if (lowerRole === "user" || lowerRole === "proposer") return "Proposer";
-	if (lowerRole === "admin") return "Admin";
-	if (lowerRole === "reviewer") return `Reviewer (Level ${level === 0 ? "0" : level})`;
-	return role;
+		if (!role) return "Unknown";
+		const lowerRole = role.toLowerCase();
+		if (lowerRole === "user" || lowerRole === "proposer") return "Proposer";
+		if (lowerRole === "admin") return "Admin";
+		if (lowerRole === "reviewer")
+			return `Reviewer (Level ${level === 0 ? "0" : level})`;
+		return role;
 	};
 
 	const filteredUsers = users.filter((user) => {
