@@ -140,7 +140,7 @@ required through the Firebase console. Follow these steps to modify user roles:
 8. Update the role value to the desired permission level (e.g., "User", "Reviewer")
 9. Click "Update" to save the changes
 
-## Note:
+## Note 1 :
 
 Role changes take effect immediately and will be reflected in the application upon the user's
 next authentication or page refresh.
@@ -149,6 +149,16 @@ next authentication or page refresh.
 ![Screenshot 2025-05-30 182409](https://github.com/user-attachments/assets/08415d00-eb4e-4dbd-9939-8fc56761149a)
 
 ---
+
+## Note 2 :
+
+To fetch reviewer proposals, Firestore indexing must be enabled.
+When an API call is made from the reviewer 'View Proposals' page,
+a link to create the required index will be logged in the terminal.
+
+## Reference Screenshot:
+![Image](https://github.com/user-attachments/assets/10d9a32f-c185-423b-8458-44768f14c2b5)
+
 
 ## 🧼 Code Formatting (Prettier)
 
