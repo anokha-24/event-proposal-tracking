@@ -155,6 +155,10 @@ next authentication or page refresh.
 To fetch reviewer proposals, Firestore indexing must be enabled.
 When an API call is made from the reviewer 'View Proposals' page,
 a link to create the required index will be logged in the terminal.
+(i.e)When this API is triggered Firestore will log a helpful link in the terminal The link looks like:
+https://console.firebase.google.com/firestore/indexescreate_composite=...
+
+Clicking this link will take you to Firestore’s console with the "Create Index" form pre-filled. Just click "Create".
 
 ## Reference Screenshot:
 ![Image](https://github.com/user-attachments/assets/10d9a32f-c185-423b-8458-44768f14c2b5)
