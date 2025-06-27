@@ -1,6 +1,6 @@
 "use client";
 
-import EditProposalContent from "@/app/_components/proposalpages/EditProposal";
+import EditProposalContent from "@/app/_components/ProposalPages/EditProposal";
 import { useRouter, useParams } from "next/navigation";
 
 export default function EditProposalPage() {
