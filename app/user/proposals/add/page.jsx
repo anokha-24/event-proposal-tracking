@@ -1,6 +1,6 @@
 "use client";
 
-import AddProposalContent from "@/app/_components/proposalpages/AddProposal";
+import AddProposalContent from "@/app/_components/ProposalPages/AddProposal";
 
 export default function AddProposalPage() {
 	return (

@@ -1,6 +1,6 @@
 "use client";
 
-import DashboardContent from "@/app/_components/proposalpages/Dashboard";
+import DashboardContent from "@/app/_components/ProposalPages/Dashboard";
 import { useRouter } from "next/navigation";
 
 export default function UserPage() {

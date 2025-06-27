@@ -1,6 +1,6 @@
 "use client";
 
-import ProposalTrackingContent from "@/app/_components/proposalpages/ProposalTracking";
+import ProposalTrackingContent from "@/app/_components/ProposalPages/ProposalTracking";
 import { useRouter, useParams } from "next/navigation";
 
 export default function ViewProposalDetailsPage() {
