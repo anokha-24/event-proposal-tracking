@@ -592,15 +592,13 @@ const ViewUsers = ({ users, setUsers, loading, setLoading }) => {
 	};
 
 	// Helper function to get display role
-	const getDisplayRole = (role) => {
-		if (!role) return "Unknown";
-		const lowerRole = role.toLowerCase();
-		if (lowerRole === "user") return "Proposer";
-		if (lowerRole === "admin") return "Admin";
-		if (lowerRole === "reviewer") return "Reviewer";
-		// Handle inconsistent casing
-		if (lowerRole === "proposer") return "Proposer";
-		return role; // Default fallback
+	const getDisplayRole = (role, level) => {
+	if (!role) return "Unknown";
+	const lowerRole = role.toLowerCase();
+	if (lowerRole === "user" || lowerRole === "proposer") return "Proposer";
+	if (lowerRole === "admin") return "Admin";
+	if (lowerRole === "reviewer") return `Reviewer (Level ${level === 0 ? "0" : level})`;
+	return role;
 	};
 
 	const filteredUsers = users.filter((user) => {
@@ -693,7 +691,7 @@ const ViewUsers = ({ users, setUsers, loading, setLoading }) => {
 																	: "bg-amber-500/10 text-amber-500"
 														}`}
 													>
-														{getDisplayRole(user.role)}
+														{getDisplayRole(user.role, user.level)}
 													</span>
 												</td>
 												<td className="px-6 py-4 whitespace-nowrap text-gray-300">
