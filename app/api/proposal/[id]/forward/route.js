@@ -11,8 +11,7 @@ import { NextResponse } from "next/server";
 
 // POST /api/proposal/[id]/forward
 export async function POST(req, { params }) {
-	const p = await params;
-	const proposalId = p.id;
+	const proposalId = params.id;
 	try {
 		const body = await req.json();
 		console.log("Body", body);
@@ -55,6 +54,8 @@ export async function POST(req, { params }) {
 		const prevReviewer = proposalData.currentReviewer;
 
 		console.log("CC", prevReviewer);
+
+		console.log("Current Reviewer", currentReviewer);
 
 		const { reviewerId, name, email } = currentReviewer || {};
 		if (!reviewerId || !name || !email) {

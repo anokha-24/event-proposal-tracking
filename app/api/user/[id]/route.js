@@ -14,51 +14,34 @@ export async function GET(_, { params }) {
 		const docSnap = await getDoc(docRef);
 
 		if (!docSnap.exists()) {
-			return NextResponse.json({ error: "User not found" }, { status: 404 });
+			return NextResponse.json({ success: false, message: "User not found" });
 		}
 
-		return NextResponse.json({ id: docSnap.id, ...docSnap.data() });
+		return NextResponse.json({ success: true, user: docSnap.data() });
 	} catch (error) {
-		if (error.name === "ZodError") {
-			return NextResponse.json(
-				{
-					error: "Invalid parameters",
-					details: error.errors,
-				},
-				{ status: 400 },
-			);
-		}
-		console.error("Error getting user:", error);
-		return NextResponse.json({ error: "Failed to get user" }, { status: 500 });
+		return NextResponse.json(
+			{ success: false, message: error.message },
+			{ status: 400 },
+		);
 	}
 }
 
 export async function DELETE(_, { params }) {
 	try {
-		const validatedParams = UserParamsSchema.parse(await params);
+		const validatedParams = UserParamsSchema.parse(params);
 		await deleteDoc(doc(db, "Auth", validatedParams.id));
 		return NextResponse.json({ success: true });
 	} catch (error) {
-		if (error.name === "ZodError") {
-			return NextResponse.json(
-				{
-					error: "Invalid parameters",
-					details: error.errors,
-				},
-				{ status: 400 },
-			);
-		}
-		console.error("Error deleting user:", error);
 		return NextResponse.json(
-			{ error: "Failed to delete user" },
-			{ status: 500 },
+			{ success: false, message: error.message },
+			{ status: 400 },
 		);
 	}
 }
 
 export async function PUT(request, { params }) {
 	try {
-		const validatedParams = UserParamsSchema.parse(await params);
+		const validatedParams = UserParamsSchema.parse(params);
 
 		const body = await request.json();
 		const validatedUpdates = UpdateUserSchema.parse(body);

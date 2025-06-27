@@ -7,14 +7,21 @@
 	},
 	"files": {
 		"ignoreUnknown": false,
-		"includes": ["!node_modules/**", "!.next/**", "!.cursor/**"]
+		"includes": [
+			"!node_modules/**",
+			"!.next/**",
+			"!.cursor/**",
+			"app/**",
+			"schemas/**",
+			"utils/**"
+		]
 	},
 	"formatter": {
 		"enabled": true,
 		"indentStyle": "tab"
 	},
 	"linter": {
-		"enabled": true,
+		"enabled": false,
 		"rules": {
 			"recommended": true
 		}

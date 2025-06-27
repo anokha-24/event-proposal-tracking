@@ -1,49 +1,29 @@
-import { NextRequest, NextResponse } from "next/server";
-import { doc, getDoc, updateDoc, serverTimestamp } from "firebase/firestore";
-import { db } from "@/app/firebase/firebase";
+import { NextResponse } from "next/server";
+import { addProposalReply } from "../../../proposalService";
 
-export async function POST(req, { params }) {
+export async function POST(request, { params }) {
+	const { id: proposalId } = await params;
+	const replyData = await request.json();
+
 	try {
-		const proposalId = await params.id;
-		const { replyText, proposerName } = await req.json();
+		const result = await addProposalReply(proposalId, replyData);
 
-		if (!replyText || !proposerName) {
-			return NextResponse.json(
-				{ success: false, message: "replyText and proposerName are required" },
-				{ status: 400 },
+		if (result === true) {
+			return NextResponse.json({ message: "Reply added successfully" });
+		} else {
+			return new NextResponse(
+				JSON.stringify({ error: result.error || "Failed to add reply" }),
+				{
+					status: 500,
+					headers: { "Content-Type": "application/json" },
+				},
 			);
 		}
-
-		const proposalRef = doc(db, "Proposals", proposalId);
-		const proposalSnap = await getDoc(proposalRef);
-
-		if (!proposalSnap.exists()) {
-			return NextResponse.json(
-				{ success: false, message: "Proposal not found" },
-				{ status: 404 },
-			);
-		}
-
-		const proposalData = proposalSnap.data();
-		const currentReplies = proposalData.replies || [];
-
-		const newReply = {
-			text: replyText,
-			proposerName,
-			timestamp: new Date(),
-		};
-
-		await updateDoc(proposalRef, {
-			replies: [...currentReplies, newReply],
-			updatedAt: serverTimestamp(),
-		});
-
-		return NextResponse.json({ success: true });
 	} catch (error) {
-		console.error("Error adding proposal reply:", error);
-		return NextResponse.json(
-			{ success: false, error: error.message },
-			{ status: 500 },
-		);
+		console.error(`Error adding reply to proposal ${proposalId}:`, error);
+		return new NextResponse(JSON.stringify({ error: "Failed to add reply" }), {
+			status: 500,
+			headers: { "Content-Type": "application/json" },
+		});
 	}
 }

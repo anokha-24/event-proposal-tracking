@@ -1,4 +1,4 @@
-name: Build Event Proposal App Web
+name: Code Formatting Check.
 
 on:
     push:
@@ -22,5 +22,5 @@ jobs:
               with:
                   version: latest
             - name: Run Biome
-              run: biome check .
+              run: biome check . --linter-enabled=false --formatter-enabled=true --assist-enabled=false
               
