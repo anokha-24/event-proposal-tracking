@@ -6,7 +6,7 @@ import { signOut } from "firebase/auth";
 import { auth } from "@/app/firebase/firebase";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"; 
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
 	UserIcon,
 	UsersIcon,
