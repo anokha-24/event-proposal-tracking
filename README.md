@@ -41,51 +41,86 @@ npm install lucide-react
 
 ## 5. Set up Firebase Configuration
 
-Create a file named .env.local in your project root and add:
+📚 **For detailed Firebase setup instructions, see [FIREBASE_SETUP.md](./FIREBASE_SETUP.md)**
 
-```sh
-NEXT_PUBLIC_FIREBASE_API_KEY=your-api-key
-NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your-auth-domain
-NEXT_PUBLIC_FIREBASE_PROJECT_ID=your-project-id
-NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your-storage-bucket
-NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your-messaging-sender-id
-NEXT_PUBLIC_FIREBASE_APP_ID=your-app-id
-```
+The comprehensive guide covers:
+- Creating a Firebase project
+- Enabling required services (Authentication, Firestore)
+- Exact Firebase options to enable
+- Setting up environment variables
+- Security rules and indexes
+- Troubleshooting common issues
 
-## 6. Set up Firebase Admin SDK for Reviewer System
+### Quick Setup (Summary)
 
-```sh
-npm install firebase-admin
-```
+1. Create a Firebase project at [Firebase Console](https://console.firebase.google.com)
+2. Enable **Email/Password Authentication**
+3. Create a **Firestore Database** (start in test mode for development)
+4. Generate **Service Account Key** for Admin SDK
+5. Copy `env.template` to `.env.local` and fill in your Firebase credentials
+6. See [FIREBASE_SETUP.md](./FIREBASE_SETUP.md) for detailed step-by-step instructions
 
-Get Firebase Admin credentials:
-
-1. Go to your Firebase project console
-2. Click on the gear icon (⚙️) in the left sidebar to open Project Settings
-3. Go to the "Service accounts" tab
-4. Click on "Generate new private key" button
-5. Save the downloaded JSON file securely
-
-Add to your .env.local file:
-
-```sh
-# Admin SDK config
-FIREBASE_ADMIN_PROJECT_ID=your-project-id
-FIREBASE_ADMIN_PRIVATE_KEY="your-private-key"
-FIREBASE_ADMIN_CLIENT_EMAIL=your-client-email
-```
-
-Replace the values with the ones from:
-
-- Your Firebase project settings for the public values
-- The downloaded service account JSON for the admin values
-
-## 7. Start the development server
+## 6. Start the development server
 
 ```sh
 npm run dev
 ```
-## To create a project in firebase follow these steps carefully:
+
+---
+
+## 📖 Firebase Setup Documentation
+
+This project requires Firebase configuration. We provide comprehensive documentation to guide you through the setup process:
+
+### 📚 Complete Setup Guides
+
+1. **[FIREBASE_QUICKSTART.md](./FIREBASE_QUICKSTART.md)** - **⚡ FAST TRACK** (15-20 min)
+   - Condensed setup guide for quick configuration
+   - Step-by-step with time estimates
+   - Perfect for experienced developers
+   - **Use this if you want to get started quickly**
+
+2. **[FIREBASE_SETUP.md](./FIREBASE_SETUP.md)** - **📖 COMPREHENSIVE** (30-45 min)
+   - Complete step-by-step Firebase configuration guide
+   - Covers project creation, authentication, Firestore, and Admin SDK
+   - Includes troubleshooting and security best practices
+   - **Recommended for first-time setup or detailed understanding**
+
+3. **[FIREBASE_OPTIONS.md](./FIREBASE_OPTIONS.md)** - **🔍 REFERENCE**
+   - Exact Firebase Console options to enable/disable
+   - Visual guide showing what to click and configure
+   - Perfect for verifying your settings
+   - **Use this as a reference while setting up**
+
+4. **[FIREBASE_CHECKLIST.md](./FIREBASE_CHECKLIST.md)** - **✅ VERIFICATION**
+   - Interactive checklist to track your progress
+   - Ensures you haven't missed any steps
+   - Includes testing and verification steps
+   - **Use this to verify your setup is complete**
+
+5. **[env.template](./env.template)** - **⚙️ CONFIGURATION**
+   - Template for `.env.local` file
+   - Shows all required environment variables
+   - Includes helpful comments and instructions
+   - **Copy this to `.env.local` and fill in your values**
+
+6. **[FIREBASE_DOCS_SUMMARY.md](./FIREBASE_DOCS_SUMMARY.md)** - **📋 OVERVIEW**
+   - Overview of all documentation files
+   - Recommended setup flow
+   - Quick reference table
+   - **Read this to understand the documentation structure**
+
+### 🎯 Quick Start Path
+
+1. Read **[FIREBASE_SETUP.md](./FIREBASE_SETUP.md)** for detailed instructions
+2. Use **[FIREBASE_OPTIONS.md](./FIREBASE_OPTIONS.md)** as a reference
+3. Copy **[env.template](./env.template)** to `.env.local` and configure
+4. Verify completion with **[FIREBASE_CHECKLIST.md](./FIREBASE_CHECKLIST.md)**
+
+---
+
+## Firebase Project Setup (Legacy Instructions)
+
 
 1. Go to the Firebase Console
 2. Click on "Add project" or "Create a project" button
