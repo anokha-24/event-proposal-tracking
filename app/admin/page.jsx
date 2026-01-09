@@ -14,6 +14,8 @@ import {
 	LogOutIcon,
 	XIcon,
 	Loader2,
+	Copy as CopyIcon,
+	Check as CheckIcon,
 } from "lucide-react";
 import { Combobox } from "@/components/ui/combo-box";
 import { Input } from "@/components/ui/input";
@@ -513,6 +515,71 @@ const SignUpForm = ({ setUsers }) => {
 	);
 };
 
+const CopyButton = ({ text }) => {
+	const [copied, setCopied] = useState(false);
+
+	const handleCopy = async () => {
+		try {
+			await navigator.clipboard.writeText(text);
+			setCopied(true);
+			setTimeout(() => setCopied(false), 2000);
+		} catch (err) {
+			console.error("Failed to copy text: ", err);
+		}
+	};
+
+	return (
+		<button
+			onClick={handleCopy}
+			className="ml-2 text-gray-500 hover:text-white transition-colors p-1 rounded hover:bg-gray-700 inline-flex items-center justify-center align-middle"
+			title="Copy to clipboard"
+		>
+			{copied ? (
+				<CheckIcon className="h-3 w-3 text-green-500" />
+			) : (
+				<CopyIcon className="h-3 w-3" />
+			)}
+		</button>
+	);
+};
+
+const CopyAllButton = ({ email, password }) => {
+	const [copied, setCopied] = useState(false);
+
+	const handleCopy = async () => {
+		const text = `Email: ${email}\nPassword: ${password || "N/A"}`;
+		try {
+			await navigator.clipboard.writeText(text);
+			setCopied(true);
+			setTimeout(() => setCopied(false), 2000);
+		} catch (err) {
+			console.error("Failed to copy credentials: ", err);
+		}
+	};
+
+	return (
+		<Button
+			variant="outline"
+			size="sm"
+			onClick={handleCopy}
+			className="mr-2 bg-blue-600/10 text-blue-500 border-blue-600/20 hover:bg-blue-600 hover:text-white transition-all"
+			title="Copy Email & Password"
+		>
+			{copied ? (
+				<>
+					<CheckIcon className="h-4 w-4 mr-1" />
+					Copied
+				</>
+			) : (
+				<>
+					<CopyIcon className="h-4 w-4 mr-1" />
+					Copy All
+				</>
+			)}
+		</Button>
+	);
+};
+
 const ViewUsers = ({ users, setUsers, loading, setLoading }) => {
 	const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 	const [userToDelete, setUserToDelete] = useState(null);
@@ -679,7 +746,10 @@ const ViewUsers = ({ users, setUsers, loading, setLoading }) => {
 													{user.name}
 												</td>
 												<td className="px-6 py-4 whitespace-nowrap text-gray-300">
-													{user.email}
+													<div className="flex items-center">
+														{user.email}
+														<CopyButton text={user.email} />
+													</div>
 												</td>
 												<td className="px-6 py-4 whitespace-nowrap">
 													<span
@@ -701,11 +771,20 @@ const ViewUsers = ({ users, setUsers, loading, setLoading }) => {
 														: user.department}
 												</td>
 												<td className="px-6 py-4 whitespace-nowrap text-gray-300">
-													{user.initialPassword || "N/A"}
+													<div className="flex items-center">
+														{user.initialPassword || "N/A"}
+														{user.initialPassword && (
+															<CopyButton text={user.initialPassword} />
+														)}
+													</div>
 												</td>
-												<td className="px-6 py-4 whitespace-nowrap">
+												<td className="px-6 py-4 whitespace-nowrap flex items-center space-x-1">
+													<CopyAllButton
+														email={user.email}
+														password={user.initialPassword}
+													/>
 													{user.role?.toLowerCase() === "admin" ? (
-														<span className="text-xs text-gray-500 italic">
+														<span className="text-xs text-gray-500 italic ml-2">
 															Admin
 														</span>
 													) : (
